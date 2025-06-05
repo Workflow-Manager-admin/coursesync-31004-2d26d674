@@ -325,11 +325,20 @@ function App() {
 
     let text = "";
     let errorMsg = "";
+    let pdfWorkerError = false;
 
     try {
       const ext = file.name.split('.').pop().toLowerCase();
       if (ext === "pdf") {
-        text = await extractTextFromPDF(file);
+        try {
+          text = await extractTextFromPDF(file);
+        } catch (err) {
+          pdfWorkerError = Boolean(
+            err?.message &&
+            /fakeworker|worker.*missing|Cannot launch.*worker/i.test(err.message)
+          );
+          errorMsg = err.message || "Failed to extract from PDF file.";
+        }
       } else if (ext === "docx") {
         text = await extractTextFromDOCX(file);
       } else if (ext === "doc") {
@@ -339,11 +348,13 @@ function App() {
       } else {
         errorMsg = "Unsupported file type. Please upload a PDF or DOCX.";
       }
+
       if (text && text.trim().length > 0) {
         const keywords = await extractKeywordsFromText(text);
         setExtractedKeywords(keywords);
       } else {
         setExtractedKeywords([]);
+        // Show a message only if there isn't already one from above.
         errorMsg = errorMsg || "Could not extract readable text from this file.";
       }
       setIsExtracted(true);
@@ -354,7 +365,9 @@ function App() {
       errorMsg = err.message || "Failed to extract keywords!";
     }
     setExtracting(false);
+
     if (errorMsg) {
+      // Show error inline, and with alert for best UX.
       setTimeout(() => {
         alert(errorMsg);
       }, 330);
