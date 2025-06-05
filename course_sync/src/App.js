@@ -3,20 +3,38 @@ import "./App.css";
 import {
   fetchInternships,
   fetchCertifications,
-  fetchProjectIdeas
+  fetchProjectIdeas,
 } from "./utils/recommendations";
 import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
+
+// file extraction dependencies
+import mammoth from "mammoth";
+import * as pdfjsLib from "pdfjs-dist";
+import keyword_extractor from "keyword-extractor";
+
+// PDF Worker setup
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "//cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js";
 
 // PUBLIC_INTERFACE
 /**
  * Main container for CourseSync app.
- * Accepts only domain input and presents recommendation tabs.
+ * Accepts either domain input or a file upload and provides recommendation tabs.
  */
 function App() {
-  // For domain manual input
+  // UI toggling
+  const [activeInput, setActiveInput] = useState("domain"); // "domain" | "file"
+
+  // Domain states
   const [domainInput, setDomainInput] = useState("");
   const [domainLoading, setDomainLoading] = useState(false);
   const [manualDomain, setManualDomain] = useState("");
+
+  // File upload states
+  const [fileError, setFileError] = useState("");
+  const [fileExtracting, setFileExtracting] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [fileRawText, setFileRawText] = useState("");
 
   // Canonical topics/keywords source
   const [extractedKeywords, setExtractedKeywords] = useState([]);
@@ -31,8 +49,11 @@ function App() {
 
   // Checks if an item is favorited (returns its _fvKey if so, or undefined)
   function isFavorite(item) {
-    return favorites.find(fav =>
-      fav.title === item.title && fav.summary === item.summary && fav.meta === item.meta
+    return favorites.find(
+      (fav) =>
+        fav.title === item.title &&
+        fav.summary === item.summary &&
+        fav.meta === item.meta
     )?._fvKey;
   }
 
@@ -42,7 +63,7 @@ function App() {
     if (!isFavorite(item)) {
       const updated = [
         ...favorites,
-        { ...item, _fvKey: key, _favType: type }
+        { ...item, _fvKey: key, _favType: type },
       ];
       setFavorites(updated);
       saveFavorites(updated);
@@ -51,7 +72,7 @@ function App() {
 
   // Remove a favorite by key (used for dashboard)
   function handleRemoveFavorite(key) {
-    const filtered = favorites.filter(fav => fav._fvKey !== key);
+    const filtered = favorites.filter((fav) => fav._fvKey !== key);
     setFavorites(filtered);
     saveFavorites(filtered);
   }
@@ -72,9 +93,29 @@ function App() {
     setDomainInput("");
     setDomainLoading(false);
     setManualDomain("");
+    setFileError("");
+    setFileExtracting(false);
+    setUploadedFileName("");
+    setFileRawText("");
+    setActiveInput("domain");
   }
 
-  // When user submits domain
+  // Switches input method (clear states as needed)
+  function handleToggleInput(type) {
+    setActiveInput(type);
+    setExtractedKeywords([]);
+    setIsExtracted(false);
+    setEditedKeywords(null);
+    setDomainInput("");
+    setDomainLoading(false);
+    setManualDomain("");
+    setFileError("");
+    setFileExtracting(false);
+    setUploadedFileName("");
+    setFileRawText("");
+  }
+
+  // Domain input submit logic
   function handleDomainSubmit(e) {
     e.preventDefault();
     const trimmed = domainInput.trim();
@@ -86,7 +127,6 @@ function App() {
     setManualDomain(trimmed);
     // Simulate AI keyword extraction: just use the domain as the single topic (demo)
     setTimeout(() => {
-      // For real case, extract subtopics from backend; here use domain and simple expansions
       const generatedKeywords = [trimmed];
       // Optionally, add some pre-fixed/related expansions for certain known domains
       if (/computer|cs|ai|data/i.test(trimmed)) {
@@ -117,6 +157,137 @@ function App() {
     }, 900);
   }
 
+  // File upload logic
+  function handleFileChange(e) {
+    setFileError("");
+    setFileExtracting(false);
+    setExtractedKeywords([]);
+    setIsExtracted(false);
+    setEditedKeywords(null);
+    setFileRawText("");
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    // Validate extension
+    const validExts = [".pdf", ".doc", ".docx"];
+    const fname = file.name || "";
+    const ext = fname.toLowerCase().slice(fname.lastIndexOf("."));
+    if (!validExts.includes(ext)) {
+      setFileError("Supported: PDF, DOC, DOCX only.");
+      return;
+    }
+    setUploadedFileName(fname);
+    setFileExtracting(true);
+    // Parse accordingly
+    if (ext === ".pdf") {
+      extractPdfText(file)
+        .then((text) => {
+          handleExtractedText(text);
+        })
+        .catch((err) => {
+          setFileError("Failed to extract PDF: " + (err?.message || "Unknown error"));
+        })
+        .finally(() => setFileExtracting(false));
+    } else if (ext === ".docx") {
+      extractDocxText(file)
+        .then((text) => {
+          handleExtractedText(text);
+        })
+        .catch((err) => {
+          setFileError("Failed to extract DOCX: " + (err?.message || "Unknown error"));
+        })
+        .finally(() => setFileExtracting(false));
+    } else if (ext === ".doc") {
+      extractDocText(file)
+        .then((text) => {
+          handleExtractedText(text);
+        })
+        .catch((err) => {
+          setFileError("Failed to extract DOC: likely unsupported format.");
+        })
+        .finally(() => setFileExtracting(false));
+    }
+  }
+
+  // Result of text extraction: perform keyword extraction
+  function handleExtractedText(text) {
+    // Defensive: fallback
+    if (!text || text.length < 10) {
+      setFileError("File parsing failed or was empty.");
+      return;
+    }
+    setFileRawText(text);
+
+    // Robust keyword extraction using 'keyword-extractor'
+    let extracted = [];
+    try {
+      // Combine sentence separation + remove very common stopwords, min-length, deduplicate
+      const raw = keyword_extractor.extract(text, {
+        language: "english",
+        remove_digits: true,
+        return_changed_case: true,
+        remove_duplicates: true,
+        return_chained_words: false,
+      });
+      extracted = Array.from(new Set(raw.filter((w) => w && w.length > 3)));
+      // For large docs, cluster top-N most frequent
+      if (extracted.length > 18) extracted = extracted.slice(0, 18);
+    } catch (err) {
+      setFileError("Failed to extract keywords. Please try a different file.");
+      return;
+    }
+    setExtractedKeywords(extracted);
+    setIsExtracted(true);
+  }
+
+  // PDF Extraction helper
+  async function extractPdfText(file) {
+    // Returns a Promise<string> containing the concatenated PDF text
+    const arrBuf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrBuf }).promise;
+    let fullText = "";
+    for (let pg = 1; pg <= pdf.numPages; ++pg) {
+      const page = await pdf.getPage(pg);
+      const txtContent = await page.getTextContent();
+      fullText += txtContent.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ") + " ";
+    }
+    return fullText;
+  }
+
+  // DOCX Extraction helper
+  async function extractDocxText(file) {
+    const arrBuf = await file.arrayBuffer();
+    const { value } = await mammoth.extractRawText({ arrayBuffer: arrBuf });
+    return value;
+  }
+
+  // DOC Extraction helper – basic support via FileReader, low quality
+  async function extractDocText(file) {
+    return new Promise((resolve, reject) => {
+      // Only support old binary text extraction (lossy, but fallback)
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const arr = new Uint8Array(e.target.result);
+          let text = "";
+          for (let i = 0; i < arr.length; ++i) {
+            // ASCII only as fallback (naive)
+            if (arr[i] >= 32 && arr[i] <= 126) text += String.fromCharCode(arr[i]);
+            else if (arr[i] === 13 || arr[i] === 10) text += " ";
+          }
+          resolve(text);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = function (e) {
+        reject(e);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   return (
     <div className="app cs-theme">
       {/* NAVBAR */}
@@ -130,7 +301,7 @@ function App() {
             <a
               href="#"
               className={navClass("Home")}
-              onClick={e => {
+              onClick={(e) => {
                 e.preventDefault();
                 handleHome();
               }}
@@ -140,7 +311,7 @@ function App() {
             <a
               href="#"
               className={navClass("Dashboard")}
-              onClick={e => {
+              onClick={(e) => {
                 e.preventDefault();
                 setShowDashboard(true);
               }}
@@ -148,15 +319,19 @@ function App() {
             >
               Dashboard
               {favorites.length > 0 && (
-                <span style={{
-                  background: "#D6C7A1", // cta-green
-                  color: "#4B2E25",      // header-bg
-                  fontWeight: 700,
-                  fontSize: "0.91em",
-                  borderRadius: "56px",
-                  padding: "2px 9px",
-                  marginLeft: 6
-                }}>{favorites.length}</span>
+                <span
+                  style={{
+                    background: "#D6C7A1", // cta-green
+                    color: "#4B2E25", // header-bg
+                    fontWeight: 700,
+                    fontSize: "0.91em",
+                    borderRadius: "56px",
+                    padding: "2px 9px",
+                    marginLeft: 6,
+                  }}
+                >
+                  {favorites.length}
+                </span>
               )}
             </a>
             <a href="#" className="cs-nav-link">
@@ -167,96 +342,219 @@ function App() {
       </nav>
       {/* Dashboard modal overlay */}
       {showDashboard && (
-        <Dashboard
-          onClose={() => setShowDashboard(false)}
-        />
+        <Dashboard onClose={() => setShowDashboard(false)} />
       )}
+
       {/* MAIN CONTENT CONTAINER */}
       <main className="cs-main" role="main">
         <div className="container cs-main-container">
-          {/* Only Domain input */}
-          <section className="cs-upload-section">
-            <h2 className="cs-section-title">Get Personalized Recommendations</h2>
-            <form
-              onSubmit={handleDomainSubmit}
-              style={{ display: "flex", alignItems: "center", gap: "17px", width: "100%", marginBottom: 2 }}
-            >
-              <input
-                type="text"
-                value={domainInput}
-                onChange={e => setDomainInput(e.target.value)}
-                placeholder="Type a domain (e.g. Computer Science, Business...)"
-                style={{
-                  fontSize: "1.04em",
-                  padding: "9px 16px",
-                  borderRadius: "7px",
-                  border: "1.4px solid #D8BFAA",
-                  minWidth: 0,
-                  width: "300px",
-                  flex: 1
-                }}
-                disabled={domainLoading}
-                aria-label="Type a domain for recommendations"
-                required
-              />
-              <button
-                type="submit"
-                className="btn cs-btn-accent"
-                style={{ minWidth: 99 }}
-                disabled={domainLoading || !domainInput.trim()}
-              >
-                {domainLoading ? "Analyzing..." : "Recommend"}
-              </button>
-            </form>
-            <div className="cs-helper-text">
-              <span>
-                Type your field of study, e.g. "Computer Science", "Business Management", "Biology", etc.
-              </span>
-            </div>
-          </section>
-          {/* EXTRACTED KEYWORDS/TOPICS */}
-          {isExtracted && extractedKeywords.length > 0 && !Array.isArray(editedKeywords) && (
-            <section className="cs-keywords-section">
-              <h3 className="cs-section-subtitle">
-                Review & Edit Topics
-              </h3>
-              <KeywordEditor
-                initialKeywords={extractedKeywords}
-                onConfirm={setEditedKeywords}
-                confirmed={false}
-              />
+          {/* Dual Input Section (toggle by tab-like UI) */}
+          {!isExtracted && !fileExtracting && (
+            <section className="cs-upload-section">
+              <h2 className="cs-section-title">
+                Get Personalized Recommendations
+              </h2>
+              <div style={{ display: "flex", gap: 20, marginBottom: 17 }}>
+                <button
+                  className={`btn cs-btn-accent${activeInput === "domain" ? " active" : ""}`}
+                  onClick={() => handleToggleInput("domain")}
+                  style={{
+                    outline: "none",
+                    borderColor:
+                      activeInput === "domain"
+                        ? "#7C4F37"
+                        : "var(--subtle-section-bg)",
+                    fontWeight: activeInput === "domain" ? 800 : 700,
+                  }}
+                  aria-pressed={activeInput === "domain"}
+                  type="button"
+                >
+                  Enter Domain
+                </button>
+                <button
+                  className={`btn cs-btn-accent${activeInput === "file" ? " active" : ""}`}
+                  onClick={() => handleToggleInput("file")}
+                  style={{
+                    outline: "none",
+                    borderColor:
+                      activeInput === "file"
+                        ? "#7C4F37"
+                        : "var(--subtle-section-bg)",
+                    fontWeight: activeInput === "file" ? 800 : 700,
+                  }}
+                  aria-pressed={activeInput === "file"}
+                  type="button"
+                >
+                  Upload Syllabus File
+                </button>
+              </div>
+              {activeInput === "domain" && (
+                <>
+                  <form
+                    onSubmit={handleDomainSubmit}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "17px",
+                      width: "100%",
+                      marginBottom: 2,
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={domainInput}
+                      onChange={(e) => setDomainInput(e.target.value)}
+                      placeholder="Type a domain (e.g. Computer Science, Business...)"
+                      style={{
+                        fontSize: "1.04em",
+                        padding: "9px 16px",
+                        borderRadius: "7px",
+                        border: "1.4px solid #D8BFAA",
+                        minWidth: 0,
+                        width: "300px",
+                        flex: 1,
+                      }}
+                      disabled={domainLoading}
+                      aria-label="Type a domain for recommendations"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="btn cs-btn-accent"
+                      style={{ minWidth: 99 }}
+                      disabled={domainLoading || !domainInput.trim()}
+                    >
+                      {domainLoading ? "Analyzing..." : "Recommend"}
+                    </button>
+                  </form>
+                  <div className="cs-helper-text">
+                    <span>
+                      Type your field of study, e.g. "Computer Science", "Business Management", "Biology"...
+                    </span>
+                  </div>
+                </>
+              )}
+              {activeInput === "file" && (
+                <>
+                  <div
+                    className="cs-upload-box"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      width: "100%",
+                      gap: 17,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <label
+                      htmlFor="file-upload"
+                      style={{
+                        fontWeight: 700,
+                        fontSize: "1.06em",
+                        color: "#7C4F37",
+                        cursor: "pointer",
+                        background: "#E6D5C3",
+                        padding: "11px 25px",
+                        borderRadius: 7,
+                        border: "1.5px solid #D8BFAA",
+                      }}
+                      aria-label="Upload Syllabus PDF, DOC or DOCX"
+                    >
+                      Select File
+                    </label>
+                    <input
+                      type="file"
+                      id="file-upload"
+                      accept=".pdf,.doc,.docx"
+                      style={{ display: "none" }}
+                      onChange={handleFileChange}
+                    />
+                    {uploadedFileName && (
+                      <div className="cs-upload-filename">{uploadedFileName}</div>
+                    )}
+                    {fileExtracting && (
+                      <div className="cs-extracting-msg">Extracting text & keywords...</div>
+                    )}
+                  </div>
+                  <div className="cs-helper-text">
+                    Supported: PDF, DOC, DOCX syllabus files. Text is extracted locally for privacy.
+                  </div>
+                  {fileError && (
+                    <div style={{ color: "#B02E25", marginTop: 8, fontWeight: 600 }}>
+                      {fileError}
+                    </div>
+                  )}
+                </>
+              )}
             </section>
           )}
 
-          {/* TABS SECTION */}
-          {isExtracted && Array.isArray(editedKeywords) && editedKeywords.length > 0 && (
-            <>
+          {/* EXTRACTED KEYWORDS/TOPICS (Domain or File) */}
+          {isExtracted &&
+            extractedKeywords.length > 0 &&
+            !Array.isArray(editedKeywords) && (
               <section className="cs-keywords-section">
-                <h3 className="cs-section-subtitle">
-                  Finalized Topics/Keywords
-                </h3>
+                <h3 className="cs-section-subtitle">Review & Edit Topics</h3>
                 <KeywordEditor
-                  initialKeywords={editedKeywords}
-                  onConfirm={() => {}}
-                  confirmed={true}
+                  initialKeywords={extractedKeywords}
+                  onConfirm={setEditedKeywords}
+                  confirmed={false}
                 />
+                {/* (Optional) For file, preview snippet of syllabus text */}
+                {activeInput === "file" && fileRawText && (
+                  <div
+                    style={{
+                      marginTop: 11,
+                      fontSize: "1em",
+                      color: "#7C4F37",
+                      background: "#F6F1EA",
+                      borderRadius: 8,
+                      padding: "12px 15px 5px 15px",
+                      border: "1px solid #D8BFAA",
+                    }}
+                  >
+                    <b>Preview (first lines of syllabus):</b>
+                    <br />
+                    <span style={{ color: "#2B1F1A" }}>
+                      {fileRawText.slice(0, 320)}
+                      {fileRawText.length > 320 ? "..." : ""}
+                    </span>
+                  </div>
+                )}
               </section>
-              <section className="cs-tabs-section">
-                <Tabs
-                  extractedKeywords={editedKeywords}
-                  onSaveFavorite={handleSaveFavorite}
-                  favorites={favorites}
-                />
-              </section>
-            </>
-          )}
+            )}
 
-          {!isExtracted && (
+          {/* TABS SECTION */}
+          {isExtracted &&
+            Array.isArray(editedKeywords) &&
+            editedKeywords.length > 0 && (
+              <>
+                <section className="cs-keywords-section">
+                  <h3 className="cs-section-subtitle">
+                    Finalized Topics/Keywords
+                  </h3>
+                  <KeywordEditor
+                    initialKeywords={editedKeywords}
+                    onConfirm={() => {}}
+                    confirmed={true}
+                  />
+                </section>
+                <section className="cs-tabs-section">
+                  <Tabs
+                    extractedKeywords={editedKeywords}
+                    onSaveFavorite={handleSaveFavorite}
+                    favorites={favorites}
+                  />
+                </section>
+              </>
+            )}
+
+          {!isExtracted && !fileExtracting && (
             <section className="cs-welcome-prompt">
               <div className="cs-brand-hero">
                 <h1 className="cs-app-title">Empower Your Degree Journey</h1>
                 <div className="cs-app-desc">
-                  Enter a domain to discover tailored internships, certifications, and project ideas matched to your learning!
+                  Enter a domain or upload your syllabus to discover tailored internships, certifications, and project ideas matched to your learning!
                 </div>
               </div>
             </section>
