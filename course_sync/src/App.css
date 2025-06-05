@@ -441,28 +441,29 @@ body {
 /* WELCOME HERO */
 .cs-welcome-prompt {
   text-align: center;
-  margin: 36px 0 0 0;
+  margin: 38px 0 0 0;
 }
 .cs-brand-hero {
-  margin-top: 27px;
-  margin-bottom: 24px;
+  margin-top: 32px;
+  margin-bottom: 29px;
 }
 .cs-app-title {
   color: var(--primary);
-  font-size: 2.55em;
-  font-weight: 800;
-  letter-spacing: -1.3px;
-  margin: 0 0 12px 0;
+  font-size: 2.65em;
+  font-weight: 900;
+  letter-spacing: -1.6px;
+  margin: 0 0 15px 0;
   font-family: inherit;
+  text-shadow: 0 1px 11px #9ceacf10;
 }
 .cs-app-desc {
   color: var(--text-secondary);
-  font-size: 1.18em;
-  font-weight: 400;
+  font-size: 1.19em;
+  font-weight: 500;
   margin: 0 auto;
-  max-width: 540px;
-  line-height: 1.48;
-  letter-spacing: 0.01em;
+  max-width: 535px;
+  line-height: 1.54;
+  letter-spacing: 0.012em;
 }
 
 /* Utility styles */
@@ -470,28 +471,35 @@ body {
   font-family: inherit;
   border: none;
   outline: none;
-  padding: 9px 18px;
-  border-radius: 5px;
-  font-weight: 600;
+  padding: 10px 19px;
+  border-radius: 6.5px;
+  font-weight: 700;
   cursor: pointer;
   background: var(--secondary);
   color: #fff;
-  transition: background 0.13s, box-shadow 0.17s;
-  box-shadow: 0 1px 2px #2d6a4f18;
+  transition: background 0.13s, box-shadow 0.17s, color 0.13s;
+  box-shadow: 0 1px 2.5px #2d6a4f19;
 }
-.btn:hover {
+.btn:hover,
+.btn:active {
   background: var(--primary);
+  color: var(--accent);
+}
+.btn:focus {
+  box-shadow: var(--focus-ring);
+  outline: none;
+  border: 2px solid var(--accent);
 }
 
 /* Saved badge */
 .saved-badge {
   background: var(--accent);
-  color: #aaa;
-  font-weight: 700;
-  border-radius: 5px;
-  margin-top: 7px;
-  font-size: 0.97em;
-  padding: 3.5px 11px;
+  color: #4a6352;
+  font-weight: 800;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-size: 0.99em;
+  padding: 4px 12px;
   align-self: flex-start;
   cursor: default;
 }
