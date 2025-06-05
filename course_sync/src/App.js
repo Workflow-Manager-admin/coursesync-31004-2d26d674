@@ -229,31 +229,68 @@ function App() {
     return keyphrases;
   }
 
-  // Extract text from a PDF file using pdfjs-dist v5+ compatibility (no explicit workerSrc)
+  // PUBLIC_INTERFACE
+  /**
+   * Extracts all text content from a PDF file using pdfjs-dist v5+ (no manual workerSrc required).
+   * Catches and handles fake worker warnings/errors robustly.
+   * Shows user-friendly error messages if parsing fails.
+   * @param {File} file - the PDF file (from input element)
+   * @returns {Promise<string>} - extracted plain text contents
+   */
   async function extractTextFromPDF(file) {
     try {
-      /*
-       * pdfjs-dist >=5 no longer provides build/pdf.worker.min.js for direct import.
-       * Official recommendation: omit assignment of GlobalWorkerOptions.workerSrc.
-       * PDF.js will use a fake worker, raising a warning but not failing.
-       * This is a robust way for React apps and small client-side tools.
-       */
+      // Import PDF.js v5+ (legacy build).
+      // DO NOT set workerSrc for v5+. Default behavior is to attempt worker, fall back to fake worker and log a warning.
+      // If fakeWorker error is thrown (rare), catch below and present a user-friendly alert.
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
-      // IMPORTANT: Do NOT assign workerSrc, let PDF.js handle worker automatically (will use fake worker with warning in dev).
-      // See: https://github.com/mozilla/pdf.js/issues/16847#issuecomment-1875701104
-      
+
+      /*
+       * No need to assign pdfjsLib.GlobalWorkerOptions.workerSrc.
+       * See discussion: https://github.com/mozilla/pdf.js/issues/16847#issuecomment-1875701104
+       * PDF.js v5+ attempts to launch a real worker automatically, else falls back to single-thread/fake worker.
+       * If user gets a fakeWorker warning, extraction usually still works unless on very large PDFs.
+       */
+
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let pdf;
+      try {
+        // Try loading the PDF document (returns promise, may warn about fake worker).
+        pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      } catch (err) {
+        // Sometimes, pdfjs-dist throws a fake worker related error here.
+        if (err?.message && err.message.match(/fakeworker|worker.*missing|Cannot launch.*worker/i)) {
+          throw new Error(
+            "PDF extraction failed due to browser security restrictions or missing worker support. " +
+            "Try a different browser, or use a smaller PDF file. " +
+            "Ask your administrator to enable SharedArrayBuffer support."
+          );
+        }
+        throw err;
+      }
+
       let text = '';
       for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map(item => item.str).join(" ");
-        text += " " + pageText;
+        try {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map(item => item.str).join(" ");
+          text += " " + pageText;
+        } catch (pageErr) {
+          // Gracefully skip unreadable pages but note problem
+          text += " [Unreadable page]";
+        }
       }
       return text;
     } catch (e) {
-      throw new Error("Failed to extract from PDF: " + e.message);
+      // Provide a clear generic error for user, differentiating fake worker issues
+      if (e.message && e.message.includes("Failed to extract from PDF")) {
+        throw e; // Already user-friendly
+      }
+      throw new Error(
+        /fakeworker|worker.*missing|Cannot launch.*worker/i.test(e.message || '')
+          ? "Failed to extract from PDF: This browser may not support PDF parsing without a real web worker. Try uploading a smaller file, or use a recent Chrome/Firefox version."
+          : "Failed to extract from PDF: " + (e.message || e.toString())
+      );
     }
   }
 
