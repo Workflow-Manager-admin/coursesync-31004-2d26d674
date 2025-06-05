@@ -32,6 +32,9 @@ function App() {
   const [extractedKeywords, setExtractedKeywords] = useState([]);
   const [isExtracted, setIsExtracted] = useState(false);
 
+  // For user-reviewed, final keywords
+  const [editedKeywords, setEditedKeywords] = useState(null);
+
   // Dashboard/favorites management
   const [showDashboard, setShowDashboard] = useState(false);
   const [favorites, setFavorites] = useState(() => loadFavorites());
@@ -77,6 +80,7 @@ function App() {
     setSelectedFile(null);
     setExtractedKeywords([]);
     setIsExtracted(false);
+    setEditedKeywords(null);
     setManualDomain("");
     setDomainInput("");
     setExtracting(false);
