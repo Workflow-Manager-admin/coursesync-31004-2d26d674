@@ -12,9 +12,10 @@ import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import keyword_extractor from "keyword-extractor";
 
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "//cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js";
+// PDF.js (v5+) uses a fake worker (in main thread) if no workerSrc is provided.
+// We intentionally DO NOT set pdfjsLib.GlobalWorkerOptions.workerSrc here.
+// Setting workerSrc or referencing a CDN worker will produce errors in modern setups.
+// The fake-worker mode shows a warning in dev, but is robust for most extraction uses.
 
 // PUBLIC_INTERFACE
 /**
