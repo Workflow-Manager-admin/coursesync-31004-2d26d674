@@ -294,16 +294,13 @@ function App() {
             <span className="cs-logo-text">CourseSync</span>
           </div>
           <div className="cs-nav-links">
-            <a
-              href="#"
+            <Link
+              to="/"
               className={navClass("Home")}
-              onClick={(e) => {
-                e.preventDefault();
-                handleHome();
-              }}
+              onClick={handleHome}
             >
               Home
-            </a>
+            </Link>
             <a
               href="#"
               className={navClass("Dashboard")}
@@ -330,9 +327,9 @@ function App() {
                 </span>
               )}
             </a>
-            <a href="#" className="cs-nav-link">
+            <Link to="/about" className={navClass("About")}>
               About
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
@@ -341,224 +338,241 @@ function App() {
         <Dashboard onClose={() => setShowDashboard(false)} />
       )}
 
-      {/* MAIN CONTENT CONTAINER */}
+      {/* MAIN CONTENT CONTAINER & ROUTES */}
       <main className="cs-main" role="main">
-        <div className="container cs-main-container">
-          {/* Dual Input Section (toggle by tab-like UI) */}
-          {!isExtracted && !fileExtracting && (
-            <section className="cs-upload-section">
-              <h2 className="cs-section-title">
-                Get Personalized Recommendations
-              </h2>
-              <div style={{ display: "flex", gap: 20, marginBottom: 17 }}>
-                <button
-                  className={`btn cs-btn-accent${activeInput === "domain" ? " active" : ""}`}
-                  onClick={() => handleToggleInput("domain")}
-                  style={{
-                    outline: "none",
-                    borderColor:
-                      activeInput === "domain"
-                        ? "#7C4F37"
-                        : "var(--subtle-section-bg)",
-                    fontWeight: activeInput === "domain" ? 800 : 700,
-                  }}
-                  aria-pressed={activeInput === "domain"}
-                  type="button"
-                >
-                  Enter Domain
-                </button>
-                <button
-                  className={`btn cs-btn-accent${activeInput === "file" ? " active" : ""}`}
-                  onClick={() => handleToggleInput("file")}
-                  style={{
-                    outline: "none",
-                    borderColor:
-                      activeInput === "file"
-                        ? "#7C4F37"
-                        : "var(--subtle-section-bg)",
-                    fontWeight: activeInput === "file" ? 800 : 700,
-                  }}
-                  aria-pressed={activeInput === "file"}
-                  type="button"
-                >
-                  Upload Syllabus File
-                </button>
+        <Routes>
+          <Route
+            path="/about"
+            element={
+              <div className="container cs-main-container">
+                <About />
               </div>
-              {activeInput === "domain" && (
-                <>
-                  <form
-                    onSubmit={handleDomainSubmit}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "17px",
-                      width: "100%",
-                      marginBottom: 2,
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={domainInput}
-                      onChange={(e) => setDomainInput(e.target.value)}
-                      placeholder="Type a domain (e.g. Computer Science, Business...)"
-                      style={{
-                        fontSize: "1.04em",
-                        padding: "9px 16px",
-                        borderRadius: "7px",
-                        border: "1.4px solid #D8BFAA",
-                        minWidth: 0,
-                        width: "300px",
-                        flex: 1,
-                      }}
-                      disabled={domainLoading}
-                      aria-label="Type a domain for recommendations"
-                      required
-                    />
-                    <button
-                      type="submit"
-                      className="btn cs-btn-accent"
-                      style={{ minWidth: 99 }}
-                      disabled={domainLoading || !domainInput.trim()}
-                    >
-                      {domainLoading ? "Analyzing..." : "Recommend"}
-                    </button>
-                  </form>
-                  <div className="cs-helper-text">
-                    <span>
-                      Type your field of study, e.g. "Computer Science", "Business Management", "Biology"...
-                    </span>
-                  </div>
-                </>
-              )}
-              {activeInput === "file" && (
-                <>
-                  <div
-                    className="cs-upload-box"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                      gap: 17,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <label
-                      htmlFor="file-upload"
-                      style={{
-                        fontWeight: 700,
-                        fontSize: "1.06em",
-                        color: "#7C4F37",
-                        cursor: "pointer",
-                        background: "#E6D5C3",
-                        padding: "11px 25px",
-                        borderRadius: 7,
-                        border: "1.5px solid #D8BFAA",
-                      }}
-                      aria-label="Upload Syllabus PDF, DOC or DOCX"
-                    >
-                      Select File
-                    </label>
-                    <input
-                      type="file"
-                      id="file-upload"
-                      accept=".pdf,.doc,.docx"
-                      style={{ display: "none" }}
-                      onChange={handleFileChange}
-                    />
-                    {uploadedFileName && (
-                      <div className="cs-upload-filename">{uploadedFileName}</div>
-                    )}
-                    {fileExtracting && (
-                      <div className="cs-extracting-msg">Extracting text & keywords...</div>
-                    )}
-                  </div>
-                  <div className="cs-helper-text">
-                    Supported: DOC, DOCX syllabus files.<br/>
-                    <span style={{ color: "#B02E25", fontWeight: 600 }}>
-                      PDF extraction is not supported in this version.
-                    </span>
-                  </div>
-                  {fileError && (
-                    <div style={{ color: "#B02E25", marginTop: 8, fontWeight: 600 }}>
-                      {fileError}
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <div className="container cs-main-container">
+                {/* Dual Input Section (toggle by tab-like UI) */}
+                {!isExtracted && !fileExtracting && (
+                  <section className="cs-upload-section">
+                    <h2 className="cs-section-title">
+                      Get Personalized Recommendations
+                    </h2>
+                    <div style={{ display: "flex", gap: 20, marginBottom: 17 }}>
+                      <button
+                        className={`btn cs-btn-accent${activeInput === "domain" ? " active" : ""}`}
+                        onClick={() => handleToggleInput("domain")}
+                        style={{
+                          outline: "none",
+                          borderColor:
+                            activeInput === "domain"
+                              ? "#7C4F37"
+                              : "var(--subtle-section-bg)",
+                          fontWeight: activeInput === "domain" ? 800 : 700,
+                        }}
+                        aria-pressed={activeInput === "domain"}
+                        type="button"
+                      >
+                        Enter Domain
+                      </button>
+                      <button
+                        className={`btn cs-btn-accent${activeInput === "file" ? " active" : ""}`}
+                        onClick={() => handleToggleInput("file")}
+                        style={{
+                          outline: "none",
+                          borderColor:
+                            activeInput === "file"
+                              ? "#7C4F37"
+                              : "var(--subtle-section-bg)",
+                          fontWeight: activeInput === "file" ? 800 : 700,
+                        }}
+                        aria-pressed={activeInput === "file"}
+                        type="button"
+                      >
+                        Upload Syllabus File
+                      </button>
                     </div>
-                  )}
-                </>
-              )}
-            </section>
-          )}
-
-          {/* EXTRACTED KEYWORDS/TOPICS (Domain or File) */}
-          {isExtracted &&
-            extractedKeywords.length > 0 &&
-            !Array.isArray(editedKeywords) && (
-              <section className="cs-keywords-section">
-                <h3 className="cs-section-subtitle">Review & Edit Topics</h3>
-                <KeywordEditor
-                  initialKeywords={extractedKeywords}
-                  onConfirm={setEditedKeywords}
-                  confirmed={false}
-                />
-                {/* (Optional) For file, preview snippet of syllabus text */}
-                {activeInput === "file" && fileRawText && (
-                  <div
-                    style={{
-                      marginTop: 11,
-                      fontSize: "1em",
-                      color: "#7C4F37",
-                      background: "#F6F1EA",
-                      borderRadius: 8,
-                      padding: "12px 15px 5px 15px",
-                      border: "1px solid #D8BFAA",
-                    }}
-                  >
-                    <b>Preview (first lines of syllabus):</b>
-                    <br />
-                    <span style={{ color: "#2B1F1A" }}>
-                      {fileRawText.slice(0, 320)}
-                      {fileRawText.length > 320 ? "..." : ""}
-                    </span>
-                  </div>
+                    {activeInput === "domain" && (
+                      <>
+                        <form
+                          onSubmit={handleDomainSubmit}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "17px",
+                            width: "100%",
+                            marginBottom: 2,
+                          }}
+                        >
+                          <input
+                            type="text"
+                            value={domainInput}
+                            onChange={(e) => setDomainInput(e.target.value)}
+                            placeholder="Type a domain (e.g. Computer Science, Business...)"
+                            style={{
+                              fontSize: "1.04em",
+                              padding: "9px 16px",
+                              borderRadius: "7px",
+                              border: "1.4px solid #D8BFAA",
+                              minWidth: 0,
+                              width: "300px",
+                              flex: 1,
+                            }}
+                            disabled={domainLoading}
+                            aria-label="Type a domain for recommendations"
+                            required
+                          />
+                          <button
+                            type="submit"
+                            className="btn cs-btn-accent"
+                            style={{ minWidth: 99 }}
+                            disabled={domainLoading || !domainInput.trim()}
+                          >
+                            {domainLoading ? "Analyzing..." : "Recommend"}
+                          </button>
+                        </form>
+                        <div className="cs-helper-text">
+                          <span>
+                            Type your field of study, e.g. "Computer Science", "Business Management", "Biology"...
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {activeInput === "file" && (
+                      <>
+                        <div
+                          className="cs-upload-box"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            width: "100%",
+                            gap: 17,
+                            marginBottom: 6,
+                          }}
+                        >
+                          <label
+                            htmlFor="file-upload"
+                            style={{
+                              fontWeight: 700,
+                              fontSize: "1.06em",
+                              color: "#7C4F37",
+                              cursor: "pointer",
+                              background: "#E6D5C3",
+                              padding: "11px 25px",
+                              borderRadius: 7,
+                              border: "1.5px solid #D8BFAA",
+                            }}
+                            aria-label="Upload Syllabus PDF, DOC or DOCX"
+                          >
+                            Select File
+                          </label>
+                          <input
+                            type="file"
+                            id="file-upload"
+                            accept=".pdf,.doc,.docx"
+                            style={{ display: "none" }}
+                            onChange={handleFileChange}
+                          />
+                          {uploadedFileName && (
+                            <div className="cs-upload-filename">{uploadedFileName}</div>
+                          )}
+                          {fileExtracting && (
+                            <div className="cs-extracting-msg">Extracting text & keywords...</div>
+                          )}
+                        </div>
+                        <div className="cs-helper-text">
+                          Supported: DOC, DOCX syllabus files.<br/>
+                          <span style={{ color: "#B02E25", fontWeight: 600 }}>
+                            PDF extraction is not supported in this version.
+                          </span>
+                        </div>
+                        {fileError && (
+                          <div style={{ color: "#B02E25", marginTop: 8, fontWeight: 600 }}>
+                            {fileError}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </section>
                 )}
-              </section>
-            )}
 
-          {/* TABS SECTION */}
-          {isExtracted &&
-            Array.isArray(editedKeywords) &&
-            editedKeywords.length > 0 && (
-              <>
-                <section className="cs-keywords-section">
-                  <h3 className="cs-section-subtitle">
-                    Finalized Topics/Keywords
-                  </h3>
-                  <KeywordEditor
-                    initialKeywords={editedKeywords}
-                    onConfirm={() => {}}
-                    confirmed={true}
-                  />
-                </section>
-                <section className="cs-tabs-section">
-                  <Tabs
-                    extractedKeywords={editedKeywords}
-                    onSaveFavorite={handleSaveFavorite}
-                    favorites={favorites}
-                  />
-                </section>
-              </>
-            )}
+                {/* EXTRACTED KEYWORDS/TOPICS (Domain or File) */}
+                {isExtracted &&
+                  extractedKeywords.length > 0 &&
+                  !Array.isArray(editedKeywords) && (
+                    <section className="cs-keywords-section">
+                      <h3 className="cs-section-subtitle">Review & Edit Topics</h3>
+                      <KeywordEditor
+                        initialKeywords={extractedKeywords}
+                        onConfirm={setEditedKeywords}
+                        confirmed={false}
+                      />
+                      {/* (Optional) For file, preview snippet of syllabus text */}
+                      {activeInput === "file" && fileRawText && (
+                        <div
+                          style={{
+                            marginTop: 11,
+                            fontSize: "1em",
+                            color: "#7C4F37",
+                            background: "#F6F1EA",
+                            borderRadius: 8,
+                            padding: "12px 15px 5px 15px",
+                            border: "1px solid #D8BFAA",
+                          }}
+                        >
+                          <b>Preview (first lines of syllabus):</b>
+                          <br />
+                          <span style={{ color: "#2B1F1A" }}>
+                            {fileRawText.slice(0, 320)}
+                            {fileRawText.length > 320 ? "..." : ""}
+                          </span>
+                        </div>
+                      )}
+                    </section>
+                  )}
 
-          {!isExtracted && !fileExtracting && (
-            <section className="cs-welcome-prompt">
-              <div className="cs-brand-hero">
-                <h1 className="cs-app-title">Empower Your Degree Journey</h1>
-                <div className="cs-app-desc">
-                  Enter a domain or upload your syllabus to discover tailored internships, certifications, and project ideas matched to your learning!
-                </div>
+                {/* TABS SECTION */}
+                {isExtracted &&
+                  Array.isArray(editedKeywords) &&
+                  editedKeywords.length > 0 && (
+                    <>
+                      <section className="cs-keywords-section">
+                        <h3 className="cs-section-subtitle">
+                          Finalized Topics/Keywords
+                        </h3>
+                        <KeywordEditor
+                          initialKeywords={editedKeywords}
+                          onConfirm={() => {}}
+                          confirmed={true}
+                        />
+                      </section>
+                      <section className="cs-tabs-section">
+                        <Tabs
+                          extractedKeywords={editedKeywords}
+                          onSaveFavorite={handleSaveFavorite}
+                          favorites={favorites}
+                        />
+                      </section>
+                    </>
+                  )}
+
+                {!isExtracted && !fileExtracting && (
+                  <section className="cs-welcome-prompt">
+                    <div className="cs-brand-hero">
+                      <h1 className="cs-app-title">Empower Your Degree Journey</h1>
+                      <div className="cs-app-desc">
+                        Enter a domain or upload your syllabus to discover tailored internships, certifications, and project ideas matched to your learning!
+                      </div>
+                    </div>
+                  </section>
+                )}
               </div>
-            </section>
-          )}
-        </div>
+            }
+          />
+          {/* fallback route to home */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       </main>
     </div>
   );
