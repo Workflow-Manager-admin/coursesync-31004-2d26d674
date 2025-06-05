@@ -77,12 +77,17 @@ function App() {
     saveFavorites(filtered);
   }
 
-  // For navigation UI highlight
+  // For navigation UI highlight (now based on URL path)
   function navClass(name) {
     if (showDashboard && name === "Dashboard") return "cs-nav-link active";
-    if (!showDashboard && name === "Home") return "cs-nav-link active";
+    if (!showDashboard && name === "Dashboard") return "cs-nav-link";
+    // Path-based active detection for routing
+    if (!showDashboard && name === "Home" && (location.pathname === "/" || location.pathname === "/home")) return "cs-nav-link active";
+    if (!showDashboard && name === "About" && location.pathname === "/about") return "cs-nav-link active";
     return "cs-nav-link";
   }
+
+  const location = useLocation();
 
   // Reset state when going "home"
   function handleHome() {
