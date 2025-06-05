@@ -157,6 +157,7 @@ function App() {
 
   // File upload logic
   function handleFileChange(e) {
+    // Reset error and state
     setFileError("");
     setFileExtracting(false);
     setExtractedKeywords([]);
@@ -165,19 +166,23 @@ function App() {
     setFileRawText("");
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    // Validate extension
-    const validExts = [".pdf", ".doc", ".docx"];
+
+    // Only allow DOC/DOCX; intercept PDF with a friendly warning
+    const validExts = [".doc", ".docx", ".pdf"];
     const fname = file.name || "";
     const ext = fname.toLowerCase().slice(fname.lastIndexOf("."));
     if (!validExts.includes(ext)) {
-      setFileError("Supported: DOC, DOCX only. (PDF upload is currently not supported.)");
+      setFileError(
+        "Unsupported file type. Please upload a DOCX file or enter a domain name instead."
+      );
       return;
     }
     setUploadedFileName(fname);
 
-    // Handle PDF uploads: show error or alert and exit gracefully
     if (ext === ".pdf") {
-      setFileError("PDF upload/extraction is not supported in this environment. Please upload a DOCX or DOC file instead.");
+      setFileError(
+        "PDF extraction is not supported in this version. Please upload a DOCX file or enter a domain name instead."
+      );
       setFileExtracting(false);
       return;
     }
@@ -460,7 +465,7 @@ function App() {
                   <div className="cs-helper-text">
                     Supported: DOC, DOCX syllabus files.<br/>
                     <span style={{ color: "#B02E25", fontWeight: 600 }}>
-                      PDF uploads are not supported in this environment.
+                      PDF extraction is not supported in this version.
                     </span>
                   </div>
                   {fileError && (
