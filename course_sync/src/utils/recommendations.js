@@ -78,36 +78,63 @@ export async function fetchInternships(topics = []) {
  * @returns {Promise<Array>} Array of certification recommendations.
  */
 export async function fetchCertifications(topics = []) {
+  // Use reference search URLs to main platforms
+  const courseraUrl = "https://www.coursera.org/search?query=ai";
+  const udemyUrl = "https://www.udemy.com/courses/search/?q=web+development";
+  const edxUrl = "https://www.edx.org/search?tab=course";
+  const skillshareUrl = "https://www.skillshare.com/en/search?query=software%20engineering";
+  const futurelearnUrl = "https://www.futurelearn.com/courses";
+  const datacampUrl = "https://www.datacamp.com/search?q=nlp";
+  const googleCertsUrl = "https://grow.google/certificates/";
   const exemplar = [
     {
       title: "Coursera: Deep Learning Specialization",
       summary: "Master neural networks and AI concepts from Andrew Ng.",
       meta: "Coursera | Beginner to Advanced",
       action: "See on Coursera",
+      resourceLink: courseraUrl
     },
     {
       title: "Udemy: The Complete Node.js Developer Course",
       summary: "Hands-on course for making Node.js web apps.",
       meta: "Udemy | Self-paced",
       action: "Explore Udemy",
+      resourceLink: udemyUrl
     },
     {
       title: "edX: Software Engineering Essentials",
       summary: "Key skills for software project management.",
       meta: "edX | Free Option",
-      action: "Start Learning",
+      action: "Start on edX",
+      resourceLink: edxUrl
+    },
+    {
+      title: "Skillshare: Agile for Software Teams",
+      summary: "Learn agile project management and dev skills.",
+      meta: "Skillshare | Self-guided",
+      action: "Watch on Skillshare",
+      resourceLink: skillshareUrl
+    },
+    {
+      title: "FutureLearn: Cybersecurity Foundations",
+      summary: "Intro to defending digital systems and networks.",
+      meta: "FutureLearn | Short Course",
+      action: "Start with FutureLearn",
+      resourceLink: futurelearnUrl
     },
     {
       title: "Google Cybersecurity Professional Cert",
       summary: "Build practical skills in defending computer systems.",
       meta: "Google Career | 6 months",
       action: "Enroll with Google",
+      resourceLink: googleCertsUrl
     },
     {
       title: "NLP Crash Course (DataCamp)",
       summary: "Apply NLP algorithms to real-world text problems.",
       meta: "DataCamp | Intermediate",
       action: "Try for Free",
+      resourceLink: datacampUrl
     }
   ];
   await new Promise(r => setTimeout(r, 600));
