@@ -229,28 +229,19 @@ function App() {
     return keyphrases;
   }
 
-  // Extract text from a PDF file using pdfjs-dist and locally bundled worker
+  // Extract text from a PDF file using pdfjs-dist v5+ compatibility (no explicit workerSrc)
   async function extractTextFromPDF(file) {
     try {
       /*
-       * Use standard synchronous import so worker is bundled.
-       * pdfjs-dist is installed, so we import the local minified worker and assign it to GlobalWorkerOptions.workerSrc.
+       * pdfjs-dist >=5 no longer provides build/pdf.worker.min.js for direct import.
+       * Official recommendation: omit assignment of GlobalWorkerOptions.workerSrc.
+       * PDF.js will use a fake worker, raising a warning but not failing.
+       * This is a robust way for React apps and small client-side tools.
        */
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
-      // The following import syntax with .default ensures compatibility with CommonJS/ESM interop
-      let pdfjsWorker;
-      try {
-        // Try ESM import
-        pdfjsWorker = (await import("pdfjs-dist/build/pdf.worker.min.js")).default;
-      } catch (err) {
-        // Fallback to require (should only happen in CommonJS contexts, but left as secondary fallback)
-        pdfjsWorker = require("pdfjs-dist/build/pdf.worker.min.js");
-      }
-      // Assign locally bundled worker script so that we do not rely on CDN or dynamic import
-      if (pdfjsLib.GlobalWorkerOptions) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-      }
-
+      // IMPORTANT: Do NOT assign workerSrc, let PDF.js handle worker automatically (will use fake worker with warning in dev).
+      // See: https://github.com/mozilla/pdf.js/issues/16847#issuecomment-1875701104
+      
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       let text = '';
