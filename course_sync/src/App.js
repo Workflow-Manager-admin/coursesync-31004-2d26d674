@@ -115,6 +115,9 @@ function App() {
             </section>
           )}
 
+          {/* Dashboard and Favorites Placeholder */}
+          {/* Future enhancement: A dashboard/favorites UI section to display saved items could be added here. */}
+          
           {!isExtracted && (
             <section className="cs-welcome-prompt">
               <div className="cs-brand-hero">
