@@ -29,6 +29,14 @@ It correctly bundles React in production mode and optimizes the build for the be
 
 ## Customization
 
+### PDF.js Worker Setup
+
+This project uses `pdfjs-dist` (v5+) for PDF parsing.  
+**No manual worker or `workerSrc` configuration is needed!**  
+Modern versions use a "fake worker" (in main thread) by default for browser usage.  
+Do _not_ set `GlobalWorkerOptions.workerSrc` or import/include `pdf.worker.min.js`; such configuration will cause errors.  
+See [pdfjs-dist documentation](https://github.com/mozilla/pdfjs-dist#fake-worker-thread-support) for more info.
+
 ### Colors
 
 The main brand colors are defined as CSS variables in `src/App.css`:
