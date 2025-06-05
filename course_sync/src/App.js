@@ -23,8 +23,44 @@ function App() {
   const [extractedKeywords, setExtractedKeywords] = useState([]);
   const [isExtracted, setIsExtracted] = useState(false);
 
-  // Example: Recommendation state (future features)
-  // const [recommendations, setRecommendations] = useState([]);
+  // Dashboard/favorites management
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [favorites, setFavorites] = useState(() => loadFavorites());
+
+  // Checks if an item is favorited (returns its _fvKey if so, or undefined)
+  function isFavorite(item) {
+    return favorites.find(fav =>
+      fav.title === item.title && fav.summary === item.summary && fav.meta === item.meta
+    )?._fvKey;
+  }
+
+  // Add a recommendation to favorites (if not present)
+  function handleSaveFavorite(item, type) {
+    const key = `${type}:${item.title}:${item.meta}`;
+    if (!isFavorite(item)) {
+      const updated = [
+        ...favorites,
+        { ...item, _fvKey: key, _favType: type }
+      ];
+      setFavorites(updated);
+      saveFavorites(updated);
+    }
+  }
+
+  // Remove a favorite by key (used for dashboard)
+  function handleRemoveFavorite(key) {
+    const filtered = favorites.filter(fav => fav._fvKey !== key);
+    setFavorites(filtered);
+    saveFavorites(filtered);
+  }
+
+  // For navigation UI highlight
+  function navClass(name) {
+    if (showDashboard && name === "Dashboard") return "cs-nav-link active";
+    if (!showDashboard && name === "Home") return "cs-nav-link active";
+    return "cs-nav-link";
+  }
+
 
   // PUBLIC_INTERFACE
   function handleFileSelect(event) {
