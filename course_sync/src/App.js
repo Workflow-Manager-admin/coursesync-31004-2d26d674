@@ -83,8 +83,88 @@ function App() {
     setDomainLoading(false);
   }
 
+  // Extract keywords from plain text using keyword-extractor or fallback to frequency analysis.
+  async function extractKeywordsFromText(text, count = 7) {
+    let keywords = [];
+    try {
+      // Try keyword-extractor if available
+      const extractor = await import("keyword-extractor");
+      keywords = extractor.default.extract(text, {
+        language: "english",
+        remove_digits: true,
+        return_changed_case: true,
+        remove_duplicates: true
+      });
+      // Frequency count
+      const freq = {};
+      for (let k of keywords) {
+        freq[k] = (freq[k] || 0) + 1;
+      }
+      keywords = Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .map(([k]) => k)
+        .slice(0, count);
+      // If nothing extracted, fallback
+      if (keywords.length === 0 && text.length > 0) throw new Error("No keywords found");
+    } catch (e) {
+      // Fallback: frequency-based on simple words
+      const words = text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .split(/\s+/)
+        .filter(w => w.length > 4); // ignore very short words
+      const freq = {};
+      words.forEach(w => {
+        freq[w] = (freq[w] || 0) + 1;
+      });
+      keywords = Object.entries(freq)
+        .sort((a, b) => b[1] - a[1])
+        .map(([k]) => k)
+        .slice(0, count);
+    }
+    return keywords;
+  }
+
+  // Extract text from a PDF file using pdfjs-dist
+  async function extractTextFromPDF(file) {
+    try {
+      // Dynamically import PDF.js for reduced bundle size
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(" ");
+        text += " " + pageText;
+      }
+      return text;
+    } catch (e) {
+      throw new Error("Failed to extract from PDF: " + e.message);
+    }
+  }
+
+  // Extract text from DOCX using mammoth
+  async function extractTextFromDOCX(file) {
+    try {
+      const mammoth = await import("mammoth");
+      const arrayBuffer = await file.arrayBuffer();
+      const { value } = await mammoth.extractRawText({ arrayBuffer });
+      return value;
+    } catch (e) {
+      throw new Error("Failed to extract from DOCX: " + e.message);
+    }
+  }
+
+  // Extract text from DOC (not robust in-browser, fallback)
+  async function extractTextFromDOC(file) {
+    // No reliable client-side DOC parser; fallback to empty/notice
+    return "";
+  }
+
   // When uploading a file
-  function handleFileSelect(event) {
+  async function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
     setSelectedFile(file);
@@ -92,22 +172,42 @@ function App() {
     setExtractedKeywords([]);
     setExtracting(true);
     setIsExtracted(false);
-    // Simulate async extraction (e.g., backend call)
-    setTimeout(() => {
-      // Mock extracted topics/keywords
-      const mockKeywords = [
-        "Distributed Systems",
-        "Software Engineering",
-        "Natural Language Processing",
-        "Database Design",
-        "Project Management",
-        "Cybersecurity",
-        "Computer Vision",
-      ];
-      setExtractedKeywords(mockKeywords);
-      setExtracting(false);
+
+    let text = "";
+    let errorMsg = "";
+
+    try {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === "pdf") {
+        text = await extractTextFromPDF(file);
+      } else if (ext === "docx") {
+        text = await extractTextFromDOCX(file);
+      } else if (ext === "doc") {
+        // Best-effort, but real .doc extraction needs server-side library! Warn user.
+        text = await extractTextFromDOC(file);
+        errorMsg = "DOC format parsing is limited in-browser. Please use PDF or DOCX for best results.";
+      } else {
+        errorMsg = "Unsupported file type. Please upload a PDF or DOCX.";
+      }
+      if (text && text.trim().length > 0) {
+        const keywords = await extractKeywordsFromText(text);
+        setExtractedKeywords(keywords);
+      } else {
+        setExtractedKeywords([]);
+        errorMsg = errorMsg || "Could not extract readable text from this file.";
+      }
       setIsExtracted(true);
-    }, 1400);
+    } catch (err) {
+      setExtractedKeywords([]);
+      setIsExtracted(false);
+      errorMsg = err.message || "Failed to extract keywords!";
+    }
+    setExtracting(false);
+    if (errorMsg) {
+      setTimeout(() => {
+        alert(errorMsg);
+      }, 330);
+    }
   }
 
   // PUBLIC_INTERFACE
