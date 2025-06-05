@@ -167,7 +167,7 @@ function App() {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
 
-    // Only allow DOC/DOCX; intercept PDF with a friendly warning
+    // Only allow DOC/DOCX. PDF: show clear warning and do not process.
     const validExts = [".doc", ".docx", ".pdf"];
     const fname = file.name || "";
     const ext = fname.toLowerCase().slice(fname.lastIndexOf("."));
@@ -175,6 +175,7 @@ function App() {
       setFileError(
         "Unsupported file type. Please upload a DOCX file or enter a domain name instead."
       );
+      setUploadedFileName("");
       return;
     }
     setUploadedFileName(fname);
@@ -184,6 +185,8 @@ function App() {
         "PDF extraction is not supported in this version. Please upload a DOCX file or enter a domain name instead."
       );
       setFileExtracting(false);
+      setFileRawText("");
+      // Prevent any further PDF parsing attempts here.
       return;
     }
 
