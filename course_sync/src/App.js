@@ -7,12 +7,12 @@ import {
 } from "./utils/recommendations";
 import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
 
-// file extraction dependencies
+// Keyword extraction and file parsing imports for dual input
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import keyword_extractor from "keyword-extractor";
 
-// PDF Worker setup
+// Set up PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "//cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js";
 
@@ -573,6 +573,7 @@ function App() {
  * @param {function} [props.onSaveFavorite]   Called with (item, type)
  * @param {Array} [props.favorites]
  */
+// PUBLIC_INTERFACE
 function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
   const tabList = ["Internships", "Certifications", "Project Ideas"];
   const [activeIdx, setActiveIdx] = useState(0);
@@ -593,10 +594,10 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
         ? fetchCertifications
         : fetchProjectIdeas;
     fetchFn(extractedKeywords)
-      .then(datas => {
+      .then((datas) => {
         if (!cancelled) setRecs(datas);
       })
-      .catch(e => {
+      .catch((e) => {
         if (!cancelled) setErr("Failed to load recommendations.");
       })
       .finally(() => {
@@ -612,7 +613,10 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
   function isFavorited(item) {
     if (!favorites) return false;
     return favorites.some(
-      f => f.title === item.title && f.summary === item.summary && f.meta === item.meta
+      (f) =>
+        f.title === item.title &&
+        f.summary === item.summary &&
+        f.meta === item.meta
     );
   }
 
@@ -666,7 +670,11 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
                   href={rec.resourceLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontWeight: 700, color: "#7C4F37", textDecoration: "underline" }}
+                  style={{
+                    fontWeight: 700,
+                    color: "#7C4F37",
+                    textDecoration: "underline",
+                  }}
                   aria-label={rec.action}
                 >
                   {rec.action}
@@ -674,18 +682,22 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
               ) : (
                 <div className="rec-action">{rec.action}</div>
               )}
-              {onSaveFavorite && (
-                isFavorited(rec) ? (
-                  <span style={{
-                    background: "#D6C7A1", // cta-green
-                    color: "#4B2E25",      // header-bg
-                    fontWeight: 700,
-                    borderRadius: 5,
-                    marginTop: 7,
-                    fontSize: "0.97em",
-                    padding: "3.5px 11px",
-                    alignSelf: "flex-start"
-                  }}>Saved</span>
+              {onSaveFavorite &&
+                (isFavorited(rec) ? (
+                  <span
+                    style={{
+                      background: "#D6C7A1", // cta-green
+                      color: "#4B2E25", // header-bg
+                      fontWeight: 700,
+                      borderRadius: 5,
+                      marginTop: 7,
+                      fontSize: "0.97em",
+                      padding: "3.5px 11px",
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    Saved
+                  </span>
                 ) : (
                   <button
                     className="btn cs-btn-accent"
@@ -695,15 +707,14 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
                       alignSelf: "flex-start",
                       fontSize: "0.98em",
                       background: "#7C4F37",
-                      color: "#E6D5C3"
+                      color: "#E6D5C3",
                     }}
                     onClick={() => onSaveFavorite(rec, favType())}
                     aria-label="Add to favorites"
                   >
                     Save
                   </button>
-                )
-              )}
+                ))}
             </div>
           ))
         )}
@@ -720,6 +731,7 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
  *  - onConfirm: function(newList: string[]) => void (required)
  *  - confirmed: boolean (whether user already confirmed; disables editing)
  */
+// PUBLIC_INTERFACE
 function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
   const [keywords, setKeywords] = useState(initialKeywords);
   const [newKeyword, setNewKeyword] = useState("");
@@ -734,7 +746,7 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
 
   // Remove a keyword by index
   function handleRemove(idx) {
-    setKeywords(ks => ks.filter((_, i) => i !== idx));
+    setKeywords((ks) => ks.filter((_, i) => i !== idx));
   }
   // Add a keyword (with cleaning, no duplicates)
   function handleAdd() {
@@ -745,7 +757,7 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
       setError("Invalid keyword.");
       return;
     }
-    if (keywords.map(k => k.toLowerCase()).includes(candidate.toLowerCase())) {
+    if (keywords.map((k) => k.toLowerCase()).includes(candidate.toLowerCase())) {
       setError("Already exists.");
       return;
     }
@@ -769,12 +781,18 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
 
   return (
     <div>
-      <div className="cs-keywords-list" style={{marginBottom: 10}}>
+      <div className="cs-keywords-list" style={{ marginBottom: 10 }}>
         {keywords.length === 0 ? (
-          <span style={{color: "#7C4F37", fontWeight: 500}}>No keywords. Add at least one to continue.</span>
+          <span style={{ color: "#7C4F37", fontWeight: 500 }}>
+            No keywords. Add at least one to continue.
+          </span>
         ) : (
           keywords.map((key, idx) => (
-            <span className="cs-keyword" key={key + idx} style={{display: "flex", alignItems: "center", gap: 6}}>
+            <span
+              className="cs-keyword"
+              key={key + idx}
+              style={{ display: "flex", alignItems: "center", gap: 6 }}
+            >
               {key}
               {!confirmed && (
                 <button
@@ -787,7 +805,7 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
                     border: "none",
                     fontWeight: "bold",
                     fontSize: "1.1em",
-                    cursor: "pointer"
+                    cursor: "pointer",
                   }}
                   onClick={() => handleRemove(idx)}
                   tabIndex={0}
@@ -801,18 +819,28 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
       </div>
       {!confirmed && (
         <>
-          <div style={{display: "flex", gap: 8, alignItems: "center", marginBottom: 10}}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              marginBottom: 10,
+            }}
+          >
             <input
               type="text"
               value={newKeyword}
               disabled={confirmed}
               maxLength={80}
-              onChange={e => {
+              onChange={(e) => {
                 setNewKeyword(e.target.value.replace(/[^\w \-]/g, ""));
                 setError(null);
               }}
-              onKeyDown={e => {
-                if (e.key === "Enter") { e.preventDefault(); handleAdd(); }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAdd();
+                }
               }}
               placeholder="Add keyword"
               style={{
@@ -822,17 +850,19 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
                 border: "1.2px solid #D8BFAA",
                 flex: 1,
                 minWidth: 0,
-                maxWidth: 188
+                maxWidth: 188,
               }}
               aria-label="Add a keyword"
             />
             <button
               className="btn cs-btn-accent"
-              style={{maxWidth: 62, minHeight: 33}}
+              style={{ maxWidth: 62, minHeight: 33 }}
               type="button"
               disabled={confirmed}
               onClick={handleAdd}
-            >Add</button>
+            >
+              Add
+            </button>
           </div>
           <div style={{ marginBottom: 8, minHeight: 18 }}>
             {error && <span style={{ color: "#B02E25" }}>{error}</span>}
@@ -843,7 +873,7 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
               background: "#4B2E25",
               color: "#FFD9BF",
               minWidth: 130,
-              fontWeight: 700
+              fontWeight: 700,
             }}
             type="button"
             onClick={handleConfirm}
@@ -855,7 +885,15 @@ function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
         </>
       )}
       {confirmed && (
-        <div style={{marginTop: 5, color: "#D6C7A1", fontWeight: 700}}>✓ Confirmed. Recommendations loaded below.</div>
+        <div
+          style={{
+            marginTop: 5,
+            color: "#D6C7A1",
+            fontWeight: 700,
+          }}
+        >
+          ✓ Confirmed. Recommendations loaded below.
+        </div>
       )}
     </div>
   );
