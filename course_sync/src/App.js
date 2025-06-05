@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import {
   fetchInternships,
@@ -10,23 +10,13 @@ import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
 // PUBLIC_INTERFACE
 /**
  * Main container for CourseSync app.
- * Lets user upload a syllabus file or enter a domain,
- * triggers recommendations from either.
+ * Accepts only domain input and presents recommendation tabs.
  */
 function App() {
-  // File input ref
-  const fileInputRef = useRef();
-
-  // UI state: input method mode
-  const [inputMode, setInputMode] = useState("file"); // "file" or "domain"
-  // For uploaded file
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fileName, setFileName] = useState("");
-  const [extracting, setExtracting] = useState(false);
   // For domain manual input
-  const [manualDomain, setManualDomain] = useState("");
   const [domainInput, setDomainInput] = useState("");
   const [domainLoading, setDomainLoading] = useState(false);
+  const [manualDomain, setManualDomain] = useState("");
 
   // Canonical topics/keywords source
   const [extractedKeywords, setExtractedKeywords] = useState([]);
@@ -73,345 +63,18 @@ function App() {
     return "cs-nav-link";
   }
 
-  // Mutually exclusive input method handlers
-  function handleInputModeChange(mode) {
-    setInputMode(mode);
-    setFileName("");
-    setSelectedFile(null);
+  // Reset state when going "home"
+  function handleHome() {
+    setShowDashboard(false);
     setExtractedKeywords([]);
     setIsExtracted(false);
     setEditedKeywords(null);
-    setManualDomain("");
     setDomainInput("");
-    setExtracting(false);
     setDomainLoading(false);
+    setManualDomain("");
   }
 
-  /**
-   * PUBLIC_INTERFACE
-   * Extract keyphrases from plain text using an advanced, robust approach:
-   * - Uses "keyword-extractor" for English noun/phrase extraction.
-   * - Further filters out stopwords & a curated academic/common words list.
-   * - Performs stemming via "natural" for grouping.
-   * - Prefers multi-word phrases, but strong single words may also appear.
-   * - Handles text from both PDF and DOCX sources robustly.
-   * @param {string} text - the corpus to extract from (unicode, student syllabus)
-   * @param {number} count - max phrases to return (default: 7)
-   * @returns {Promise<string[]>} - extracted suggestions, deduped, best-to-least ranked
-   */
-  async function extractKeywordsFromText(text, count = 7) {
-    // Additional academic and common (meta) terms to exclude
-    const COMMON_WORDS = new Set([
-      "introduction", "outline", "objectives", "overview", "details",
-      "module", "chapter", "section", "syllabus", "student", "teacher", "professor",
-      "course", "university", "college", "learning", "study", "week", "unit",
-      "assessment", "instruction", "assignment", "homework", "project", "exam",
-      "lesson", "evaluation", "reference", "textbook", "references", "topic", "topics"
-    ]);
-
-    let keyphrases = [];
-
-    try {
-      // (1) Load NLP helpers dynamically
-      const extractor = await import("keyword-extractor");
-      let natural;
-      try {
-        natural = await import("natural");
-      } catch {
-        natural = null;
-      }
-
-      // (2) Use phrase extraction: prefer expressions, not just words
-      let phrases = extractor.default.extract(text, {
-        language: "english",
-        remove_digits: true,
-        return_changed_case: true,
-        remove_duplicates: false
-      });
-
-      // (3) Clean/filter each phrase, remove trivial/short and all meta words
-      const STOPWORDS = new Set(extractor.default.getStopwords("english"));
-      phrases = phrases
-        .map(phrase => phrase.trim().replace(/[-_]+/g, " "))
-        .filter(w =>
-          !!w &&
-          w.length > 2 &&
-          !/^[a-z]$/.test(w) &&
-          !STOPWORDS.has(w) &&
-          !COMMON_WORDS.has(w) &&
-          /[a-z]/i.test(w)
-        );
-
-      // (4) Apply stemming for grouping
-      let stemFunc = natural && natural.PorterStemmer
-        ? natural.PorterStemmer.stem
-        : (w => w);
-      let lemmaMap = {};
-      let lemmaFreq = {};
-
-      for (const phrase of phrases) {
-        let lemma;
-        if (phrase.split(/\s+/).length > 1) {
-          // For multiword, stem each word
-          lemma = phrase
-            .split(/\s+/)
-            .map(token => stemFunc(token))
-            .join(" ");
-        } else {
-          lemma = stemFunc(phrase);
-        }
-        lemmaMap[phrase] = lemma;
-        lemmaFreq[lemma] = (lemmaFreq[lemma] || 0) + 1;
-      }
-
-      // (5) Candidate ranking: prefer longest/multi-token, then by frequency
-      let sortedEntries = Object.entries(lemmaMap)
-        .sort((a, b) => {
-          let alen = a[0].split(" ").length, blen = b[0].split(" ").length;
-          if (blen !== alen) return blen - alen;
-          return lemmaFreq[b[1]] - lemmaFreq[a[1]];
-        });
-
-      // (6) Remove repeated stems
-      let usedStems = new Set();
-      let deduped = [];
-      for (const [orig, lemma] of sortedEntries) {
-        if (!usedStems.has(lemma)) {
-          usedStems.add(lemma);
-          deduped.push(orig);
-        }
-      }
-      // Select n multiword, then singles (with no repeats)
-      const multi = deduped.filter(w => w.split(" ").length > 1);
-      const single = deduped.filter(w => w.split(" ").length === 1);
-      keyphrases = [
-        ...multi.slice(0, Math.ceil(count / 2)),
-        ...single
-      ].filter((v, idx, arr) => arr.indexOf(v) === idx).slice(0, count);
-
-      // Force at least some output if text present
-      if (keyphrases.length === 0 && text.length > 0) {
-        throw new Error("No keyphrases found");
-      }
-    } catch (err) {
-      // Fallback: freq-based, robust for all sources
-      const extractor = await import("keyword-extractor");
-      const STOPWORDS = new Set(extractor.default.getStopwords("english"));
-      let natural;
-      try {
-        natural = await import("natural");
-      } catch {
-        natural = null;
-      }
-      let stemFunc = natural && natural.PorterStemmer
-        ? natural.PorterStemmer.stem
-        : (x => x);
-      let tokens = text
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, "")
-        .split(/\s+/)
-        .filter(w =>
-          w.length > 3 &&
-          !STOPWORDS.has(w) &&
-          !COMMON_WORDS.has(w)
-        );
-
-      let counts = {};
-      tokens.forEach(w => {
-        let s = stemFunc(w);
-        counts[s] = (counts[s] || 0) + 1;
-      });
-      keyphrases = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([k]) => k)
-        .slice(0, count);
-    }
-    return keyphrases;
-  }
-
-  /*
-   * ---- PDF Extraction (pdfjs-dist v5+ compatibility; robust error handling) ----
-   * 
-   * - Never set workerSrc! pdfjs-dist v5+ manages its worker internally;
-   * - We gracefully catch *all* fake worker and environment errors, show user-friendly errors.
-   * - If extraction fails, feedback is prompt and clear. The rest of the UI remains usable (domain/manual input always works).
-   */
-
-  // PUBLIC_INTERFACE
-  /**
-   * Extracts all text content from a PDF file using pdfjs-dist v5+ (never sets workerSrc).
-   * Handles:
-   *   - Fallback to fake worker (if browser does not allow real worker)
-   *   - All errors, including fakeworker/failure/error in unsupported environments
-   *   - User-friendly error UI for all error scenarios
-   *   - Never interrupts domain/keyword/manual input if PDF fails
-   * @param {File} file - PDF File object (from input)
-   * @returns {Promise<string>} - extracted plain text (throws with clean message on failure)
-   */
-  async function extractTextFromPDF(file) {
-    try {
-      // Import PDF.js v5+. Never set workerSrc!
-      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
-      // DO NOT set pdfjsLib.GlobalWorkerOptions.workerSrc for v5!
-
-      const arrayBuffer = await file.arrayBuffer();
-
-      let pdf;
-      try {
-        // Try to parse PDF. If browser doesn't support web workers, pdfjs will auto-fallback to "fake worker" (single-threaded)
-        pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      } catch (err) {
-        // Handle fakeworker/failure/missing worker and similar issues
-        if (
-          err?.message &&
-          /(fakeworker|worker.*missing|Cannot launch.*worker|No "pdfjsWorker"|PDF.js v2 deprecated worker|pdfjs-dist:.*worker)/i.test(
-            err.message
-          )
-        ) {
-          throw new Error(
-            "PDF extraction failed because this browser or environment does not fully support PDF.js. " +
-              "Try using a different, modern browser (like the latest Chrome or Firefox), or upload a smaller/less complex PDF. " +
-              "You can still use the 'Enter Domain' option below."
-          );
-        }
-        throw err;
-      }
-
-      let text = "";
-      for (let i = 1; i <= pdf.numPages; i++) {
-        try {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          // Concatenate all strings from the PDF content into text.
-          const pageText = content.items.map((item) => item.str).join(" ");
-          text += " " + pageText;
-        } catch (pageErr) {
-          // Skip unreadable pages but add a marker so extraction continues gracefully.
-          text += " [Unreadable page]";
-        }
-      }
-      return text;
-    } catch (e) {
-      // At this point, any error, whether from pdfjs or downstream, should be wrapped for user feedback.
-      let msg =
-        typeof e.message === "string"
-          ? e.message
-          : typeof e === "string"
-          ? e
-          : "Unknown error";
-      // Enhance message if it's a known fakeworker or PDF.js environment limitation.
-      if (
-        /(fakeworker|worker.*missing|Cannot launch.*worker|No "pdfjsWorker"|PDF.js v2 deprecated worker|pdfjs-dist:.*worker)/i.test(
-          msg
-        )
-      ) {
-        msg =
-          "Failed to extract text from PDF: Your browser or environment does not fully support PDF.js extraction. " +
-          "Try uploading a smaller PDF, or switch to a modern Chrome or Firefox browser. " +
-          "You can still continue using the rest of the app or enter a domain manually below.";
-      } else if (/unsupported|not implemented|Invalid/i.test(msg)) {
-        msg =
-          "Failed to extract text from PDF: This PDF file is encrypted, malformed, or uses an unsupported feature. Try a different file or method.";
-      } else if (/aborted|cancelled|abort/i.test(msg)) {
-        msg =
-          "PDF extraction was aborted. Please try re-uploading, or use the 'Enter Domain' method instead.";
-      } else if (
-        !/Failed to extract|PDF extraction|domain manually/i.test(msg)
-      ) {
-        msg = "Failed to extract text from PDF: " + msg;
-      }
-      throw new Error(msg);
-    }
-  }
-
-  // Extract text from DOCX using mammoth
-  async function extractTextFromDOCX(file) {
-    try {
-      const mammoth = await import("mammoth");
-      const arrayBuffer = await file.arrayBuffer();
-      const { value } = await mammoth.extractRawText({ arrayBuffer });
-      return value;
-    } catch (e) {
-      throw new Error("Failed to extract from DOCX: " + e.message);
-    }
-  }
-
-  // Extract text from DOC (not robust in-browser, fallback)
-  async function extractTextFromDOC(file) {
-    // No reliable client-side DOC parser; fallback to empty/notice
-    return "";
-  }
-
-  // When uploading a file
-  async function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    setSelectedFile(file);
-    setFileName(file.name);
-    setExtractedKeywords([]);
-    setIsExtracted(false);
-    setEditedKeywords(null);
-    setExtracting(true);
-
-    let text = "";
-    let errorMsg = "";
-    let pdfWorkerError = false;
-
-    try {
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (ext === "pdf") {
-        try {
-          text = await extractTextFromPDF(file);
-        } catch (err) {
-          pdfWorkerError = Boolean(
-            err?.message &&
-            /(fakeworker|worker.*missing|Cannot launch.*worker|No "pdfjsWorker"|PDF.js v2 deprecated worker|pdfjs-dist:.*worker)/i.test(
-              err.message
-            )
-          );
-          errorMsg = err.message || "Failed to extract from PDF file.";
-        }
-      } else if (ext === "docx") {
-        text = await extractTextFromDOCX(file);
-      } else if (ext === "doc") {
-        // Best-effort, but real .doc extraction needs server-side library! Warn user.
-        text = await extractTextFromDOC(file);
-        errorMsg = "DOC format parsing is limited in-browser. Please use PDF or DOCX for best results.";
-      } else {
-        errorMsg = "Unsupported file type. Please upload a PDF or DOCX.";
-      }
-
-      if (text && text.trim().length > 0) {
-        const keywords = await extractKeywordsFromText(text);
-        setExtractedKeywords(keywords);
-      } else {
-        setExtractedKeywords([]);
-        // Show a message only if there isn't already one from above.
-        errorMsg = errorMsg || "Could not extract readable text from this file.";
-      }
-      setIsExtracted(true);
-    } catch (err) {
-      setExtractedKeywords([]);
-      setIsExtracted(false);
-      setEditedKeywords(null);
-      errorMsg = err.message || "Failed to extract keywords!";
-    }
-    setExtracting(false);
-
-    if (errorMsg) {
-      // Show error inline, and with alert for best UX.
-      setTimeout(() => {
-        alert(errorMsg);
-      }, 330);
-    }
-  }
-
-  // PUBLIC_INTERFACE
-  function showFileDialog() {
-    fileInputRef.current.click();
-  }
-  
-  // When user submits domain instead of uploading a file
+  // When user submits domain
   function handleDomainSubmit(e) {
     e.preventDefault();
     const trimmed = domainInput.trim();
@@ -421,7 +84,7 @@ function App() {
     setEditedKeywords(null);
     setDomainLoading(true);
     setManualDomain(trimmed);
-    // Simulate AI keyword extraction: just use the domain as the single topic (for demo)
+    // Simulate AI keyword extraction: just use the domain as the single topic (demo)
     setTimeout(() => {
       // For real case, extract subtopics from backend; here use domain and simple expansions
       const generatedKeywords = [trimmed];
@@ -454,9 +117,6 @@ function App() {
     }, 900);
   }
 
-  // Clean up input fields when toggling modes
-  // (Already done via handleInputModeChange.)
-
   return (
     <div className="app cs-theme">
       {/* NAVBAR */}
@@ -472,7 +132,7 @@ function App() {
               className={navClass("Home")}
               onClick={e => {
                 e.preventDefault();
-                setShowDashboard(false);
+                handleHome();
               }}
             >
               Home
@@ -514,113 +174,51 @@ function App() {
       {/* MAIN CONTENT CONTAINER */}
       <main className="cs-main" role="main">
         <div className="container cs-main-container">
-          {/* Choice: File upload or Domain input */}
+          {/* Only Domain input */}
           <section className="cs-upload-section">
             <h2 className="cs-section-title">Get Personalized Recommendations</h2>
-            <div style={{display: "flex", gap: "14px", marginBottom: 14}}>
-              <button
-                type="button"
-                className={`btn cs-btn-accent${inputMode === "file" ? " active" : ""}`}
-                aria-pressed={inputMode === "file"}
+            <form
+              onSubmit={handleDomainSubmit}
+              style={{ display: "flex", alignItems: "center", gap: "17px", width: "100%", marginBottom: 2 }}
+            >
+              <input
+                type="text"
+                value={domainInput}
+                onChange={e => setDomainInput(e.target.value)}
+                placeholder="Type a domain (e.g. Computer Science, Business...)"
                 style={{
-                  background: inputMode === "file" ? "#4B2E25" : "",
-                  color: inputMode === "file" ? "#FFD9BF" : ""
+                  fontSize: "1.04em",
+                  padding: "9px 16px",
+                  borderRadius: "7px",
+                  border: "1.4px solid #D8BFAA",
+                  minWidth: 0,
+                  width: "300px",
+                  flex: 1
                 }}
-                onClick={() => handleInputModeChange("file")}
-              >
-                Upload Syllabus
-              </button>
+                disabled={domainLoading}
+                aria-label="Type a domain for recommendations"
+                required
+              />
               <button
-                type="button"
-                className={`btn cs-btn-accent${inputMode === "domain" ? " active" : ""}`}
-                aria-pressed={inputMode === "domain"}
-                style={{
-                  background: inputMode === "domain" ? "#4B2E25" : "",
-                  color: inputMode === "domain" ? "#FFD9BF" : ""
-                }}
-                onClick={() => handleInputModeChange("domain")}
+                type="submit"
+                className="btn cs-btn-accent"
+                style={{ minWidth: 99 }}
+                disabled={domainLoading || !domainInput.trim()}
               >
-                Enter Domain
+                {domainLoading ? "Analyzing..." : "Recommend"}
               </button>
-            </div>
-            {/* Depending on the input method: */}
-            {inputMode === "file" ? (
-              <div className="cs-upload-box">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  ref={fileInputRef}
-                  style={{display: "none"}}
-                  onChange={handleFileSelect}
-                />
-                <button className="btn cs-btn-accent" onClick={showFileDialog}>
-                  {fileName ? "Change File" : "Select File"}
-                </button>
-                <span className="cs-upload-filename">
-                  {fileName}
-                </span>
-                {extracting && <span className="cs-extracting-msg">Analyzing document with AI...</span>}
-              </div>
-            ) : (
-              <form
-                onSubmit={handleDomainSubmit}
-                style={{ display: "flex", alignItems: "center", gap: "17px", width: "100%", marginBottom: 2 }}
-              >
-                <input
-                  type="text"
-                  value={domainInput}
-                  onChange={e => setDomainInput(e.target.value)}
-                  placeholder="Type a domain (e.g. Computer Science, Business...)"
-                  style={{
-                    fontSize: "1.04em",
-                    padding: "9px 16px",
-                    borderRadius: "7px",
-                    border: "1.4px solid #D8BFAA",
-                    minWidth: 0,
-                    width: "300px",
-                    flex: 1
-                  }}
-                  disabled={domainLoading}
-                  aria-label="Type a domain for recommendations"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="btn cs-btn-accent"
-                  style={{ minWidth: 99 }}
-                  disabled={domainLoading || !domainInput.trim()}
-                >
-                  {domainLoading ? "Analyzing..." : "Recommend"}
-                </button>
-              </form>
-            )}
+            </form>
             <div className="cs-helper-text">
-              {inputMode === "file" ? (
-                <>
-                  Supports PDF, DOC, DOCX.<br />
-                  <b>
-                    Don't have a syllabus? Try entering your domain below!
-                  </b>
-                </>
-              ) : (
-                <>
-                  <span>
-                    Type your field of study, e.g. "Computer Science", "Business Management", "Biology", etc.<br />
-                    <b>
-                      Want more accurate results? Try uploading a syllabus!
-                    </b>
-                  </span>
-                </>
-              )}
+              <span>
+                Type your field of study, e.g. "Computer Science", "Business Management", "Biology", etc.
+              </span>
             </div>
           </section>
           {/* EXTRACTED KEYWORDS/TOPICS */}
           {isExtracted && extractedKeywords.length > 0 && !Array.isArray(editedKeywords) && (
             <section className="cs-keywords-section">
               <h3 className="cs-section-subtitle">
-                {inputMode === "file"
-                  ? "Review & Edit Extracted Topics/Keywords"
-                  : "Review & Edit Topics"}
+                Review & Edit Topics
               </h3>
               <KeywordEditor
                 initialKeywords={extractedKeywords}
@@ -658,8 +256,7 @@ function App() {
               <div className="cs-brand-hero">
                 <h1 className="cs-app-title">Empower Your Degree Journey</h1>
                 <div className="cs-app-desc">
-                  Upload your syllabus <b>or</b> enter a domain to discover tailored
-                  internships, certifications, and project ideas matched to your learning!
+                  Enter a domain to discover tailored internships, certifications, and project ideas matched to your learning!
                 </div>
               </div>
             </section>
