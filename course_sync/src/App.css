@@ -506,31 +506,33 @@ body {
 
 /* RESPONSIVE STYLES */
 @media (max-width: 900px) {
-  .navbar-inner { padding: 0 12px; }
-  .cs-main-container { padding: 20px 6vw 32px 6vw; }
-  .dashboard-modal { padding: 22px 7vw 24px 7vw; }
+  .navbar-inner { padding: 0 11px; }
+  .cs-main-container { padding: 20px 4vw 30px 4vw; }
+  .dashboard-modal { padding: 21px 5vw 22px 5vw; }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 700px) {
   .navbar-inner {
-    padding: 0 5px;
-    height: 56px;
+    padding: 0 2vw;
+    height: 55px;
   }
-  .navbar.cs-navbar { height: 56px; }
-  .cs-main { padding-top: 64px; }
-  .cs-main-container { padding: 12px 1vw 23px 1vw; }
+  .navbar.cs-navbar { height: 55px; }
+  .cs-main { padding-top: 60px; }
+  .cs-main-container { padding: 10px 0vw 14px 0vw; }
   .cs-tabs-section,
   .cs-upload-section,
   .cs-keywords-section {
-    padding: 12px 4px 12px 7px;
+    padding: 13px 2vw 13px 2vw;
   }
   .rec-card {
-    min-width: 98vw;
-    width: 99%;
-    padding: 13px 7px 14px 10px;
+    min-width: 93vw;
+    width: 99vw;
+    padding: 12px 5px 12px 10px;
     box-sizing: border-box;
   }
-  .dashboard-modal { padding: 18px 4vw 18px 3vw; }
+  .dashboard-modal { padding: 13px 2vw 13px 2vw; }
+  .cs-tabs { flex-direction: column; gap: 6px; margin-bottom: 19px;}
+  .cs-tab-btn { width: 100%; border-radius: 8px 8px 0 0; margin-right: 0;}
 }
 
 @media (max-width: 500px) {
@@ -538,8 +540,10 @@ body {
     flex-direction: column;
     align-items: flex-start;
     height: unset;
-    padding: 0 2px;
-    gap: 3px;
+    padding: 0 1px;
+    gap: 2px;
   }
-  .cs-main-container { gap: 19px; }
+  .cs-main-container { gap: 13px; }
+  .rec-card { font-size: 0.97em; }
+  .cs-upload-box { flex-direction: column; align-items: stretch; gap: 8px;}
 }
