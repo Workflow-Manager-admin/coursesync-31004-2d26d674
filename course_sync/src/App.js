@@ -86,16 +86,17 @@ function App() {
   /**
    * PUBLIC_INTERFACE
    * Extract keyphrases from plain text using a robust approach:
-   * - Use "keyword-extractor" noun/expression extraction (English)
-   * - Remove stopwords and filter out very common/meaningless words
-   * - Prefer multi-word phrases if available, otherwise fallback to best high-signal single words
+   * - Uses "keyword-extractor" for noun/expression extraction (English)
+   * - Further filters stopwords with a custom academic list
+   * - Applies stemming/lemmatization via 'natural' to group related words/phrases
+   * - Prefers multi-word phrases but ensures best high-signal single words included
    * - Handles text from both PDF and DOCX sources
    * @param {string} text
    * @param {number} count Number of keyphrases to return (default 7)
    * @returns {Promise<string[]>}
    */
   async function extractKeywordsFromText(text, count = 7) {
-    // List of very common academic and frequent words to remove beyond keyword-extractor's built-in stopwords
+    // Extra academic/common stopwords to filter
     const COMMON_WORDS = new Set([
       "introduction", "outline", "objectives", "module", "chapter", "syllabus",
       "student", "teacher", "course", "university", "college", "teacher", "learning", 
@@ -104,9 +105,15 @@ function App() {
     ]);
     let keyphrases = [];
     try {
-      // Use keyword-extractor (noun phrases, not just word roots)
+      // Use keyword-extractor for phrase and keyword extraction
       const extractor = await import("keyword-extractor");
-      // Use extract() with option to get phrases
+      let natural = null;
+      try {
+        natural = await import("natural");
+      } catch {
+        // Fallback skip stemming if not present
+      }
+
       let phrases = extractor.default.extract(text, {
         language: "english",
         remove_digits: true,
@@ -114,63 +121,93 @@ function App() {
         remove_duplicates: false
       });
 
-      // Remove single-letter and very short words, and enforce a minimum char/word count for phrases
+      // Filter out very short/single-letter words and extra common words
       phrases = phrases
         .map(phrase => phrase.trim())
         .filter(k =>
-          k &&
-          k.length > 2 &&
-          !/^[a-z]$/.test(k) &&
-          !COMMON_WORDS.has(k) &&
-          k.match(/[a-z]/i)
+          k && k.length > 2 && !/^[a-z]$/.test(k) &&
+          !COMMON_WORDS.has(k) && k.match(/[a-z]/i)
         );
 
-      // Remove stopwords using keyword-extractor's stopword list (but as a Set for speed)
+      // Stopword filtering (keyword-extractor's + academic extra)
       const STOPWORDS = new Set(extractor.default.getStopwords("english"));
       phrases = phrases.filter(
         k => !STOPWORDS.has(k) && !COMMON_WORDS.has(k)
       );
 
-      // Prepare a frequency map to rank by importance in the text (like simplified TextRank/TF)
-      const counts = {};
-      for (let phrase of phrases) {
-        if (phrase.length < 3) continue;
-        counts[phrase] = (counts[phrase] || 0) + 1;
+      // Stemming/lemmatization for grouping: use natural.PorterStemmer if available
+      let lemmaMap = {};
+      let groupedCounts = {};
+      let stemFunc = natural && natural.PorterStemmer
+        ? natural.PorterStemmer.stem
+        : (x => x);
+
+      for (const phrase of phrases) {
+        let lemma;
+        if (phrase.trim().split(/\s+/).length > 1) {
+          lemma = phrase.trim()
+            .split(/\s+/)
+            .map(w => stemFunc(w))
+            .join(" ");
+        } else {
+          lemma = stemFunc(phrase);
+        }
+        lemmaMap[phrase] = lemma;
+        groupedCounts[lemma] = (groupedCounts[lemma] || 0) + 1;
       }
-      // Prefer multi-word phrases but mix in top relevant single words if needed
-      let sorted = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([p, n]) => p);
 
-      // Shuffle in some top 2-3 word phrases (TF-IDF like approach)
-      let multiword = sorted.filter(p => p.split(" ").length > 1);
-      let singleword = sorted.filter(p => p.split(" ").length === 1);
+      // Rank: longer (multi-word) > single, then by frequency
+      let phraseCandidates = Object.entries(lemmaMap)
+        .sort((a, b) => {
+          let alen = a[0].split(" ").length, blen = b[0].split(" ").length;
+          if (blen !== alen) return blen - alen;
+          return groupedCounts[b[1]] - groupedCounts[a[1]];
+        });
 
+      // Remove duplicates (grouped by lemma)
+      let usedLemmas = new Set();
+      let bestPhrases = [];
+      for (let [orig, lemma] of phraseCandidates) {
+        if (!usedLemmas.has(lemma)) {
+          usedLemmas.add(lemma);
+          bestPhrases.push(orig);
+        }
+      }
+
+      // Sorted by frequency
+      let rankedByCount = bestPhrases.sort((a, b) => groupedCounts[lemmaMap[b]] - groupedCounts[lemmaMap[a]]);
+      // Separate multi-word from single
+      const multiword = rankedByCount.filter(p => p.split(" ").length > 1);
+      const singleword = rankedByCount.filter(p => p.split(" ").length === 1);
+
+      // Take top multiword/then singles, dedup
       keyphrases = [
-        ...multiword.slice(0, Math.ceil(count/2)),
+        ...multiword.slice(0, Math.ceil(count / 2)),
         ...singleword.slice(0, count)
-      ].filter((v, idx, arr) => arr.indexOf(v) === idx)
-       .slice(0, count);
+      ].filter((v, idx, arr) => arr.indexOf(v) === idx).slice(0, count);
 
-      // If nothing found, fallback
       if (keyphrases.length === 0 && text.length > 0) throw new Error("No keyphrases found");
     } catch (e) {
-      // Fallback: frequency-based on non-trivial words only (after filtering stopwords/common)
+      // Fallback: basic freq-based after filtering and stemming if possible
       let words = text
         .toLowerCase()
         .replace(/[^a-z0-9\s]/g, "")
         .split(/\s+/)
         .filter(w =>
           w.length > 3 &&
-          !["this","that","will","with","from","which","have","been","very","upon"].includes(w) &&
+          !["this", "that", "will", "with", "from", "which", "have", "been", "very", "upon"].includes(w) &&
           !COMMON_WORDS.has(w)
         );
       const extractor = await import("keyword-extractor");
       const STOPWORDS = new Set(extractor.default.getStopwords("english"));
       const freq = {};
+      let natural = null;
+      try { natural = await import("natural"); } catch {}
+      let stemFunc = natural && natural.PorterStemmer ? natural.PorterStemmer.stem : (x => x);
       words.forEach(w => {
         if (!STOPWORDS.has(w) && !COMMON_WORDS.has(w)) {
-          freq[w] = (freq[w] || 0) + 1;
+          let lemma = stemFunc(w);
+          freq[lemma] = (freq[lemma] || 0) + 1;
         }
       });
       keyphrases = Object.entries(freq)
