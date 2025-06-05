@@ -38,7 +38,7 @@
 html {
   font-size: 17px;
   line-height: 1.58;
-  background: var(--background);
+  background: var(--main-bg);
 }
 
 body {
@@ -46,8 +46,8 @@ body {
   padding: 0;
   font-family: 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
   font-weight: 400;
-  background: var(--background);
-  color: var(--text-main);
+  background: var(--main-bg);
+  color: var(--text-primary);
   letter-spacing: 0.003em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -55,8 +55,8 @@ body {
 
 .app.cs-theme {
   min-height: 100vh;
-  background: var(--background);
-  color: var(--text-main);
+  background: var(--main-bg);
+  color: var(--text-primary);
   font-family: inherit;
 }
 
