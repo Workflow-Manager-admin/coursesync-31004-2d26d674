@@ -9,7 +9,6 @@ import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
 
 // Keyword extraction and file parsing imports for dual input
 import mammoth from "mammoth";
-import * as pdfjsLib from "pdfjs-dist";
 import keyword_extractor from "keyword-extractor";
 
 // PDF.js (v5+) uses a fake worker (in main thread) if no workerSrc is provided.
