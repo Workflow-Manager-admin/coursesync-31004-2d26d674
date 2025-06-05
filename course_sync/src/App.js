@@ -116,7 +116,7 @@ function App() {
           {/* TABS SECTION */}
           {isExtracted && (
             <section className="cs-tabs-section">
-              <Tabs />
+              <Tabs extractedKeywords={extractedKeywords} />
             </section>
           )}
 
