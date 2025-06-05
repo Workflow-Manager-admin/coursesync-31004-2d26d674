@@ -12,13 +12,8 @@ import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import keyword_extractor from "keyword-extractor";
 
-/*
- * PDF.js (v5+) uses a fake worker (in main thread) if no workerSrc is provided.
- * You do NOT need to import, set, or refer to pdf.worker.min.js or GlobalWorkerOptions.
- * The default/fake-worker approach is robust for browser usage and local extraction.
- * For details: https://github.com/mozilla/pdfjs-dist#fake-worker-thread-support
- * Any manual workerSrc or script configuration is now unnecessary and may cause errors.
- */
+// PDF.js (v5+) uses a fake worker (in main thread) if no workerSrc is provided.
+// Do NOT set GlobalWorkerOptions.workerSrc or import/include pdf.worker.min.js.
 
 // PUBLIC_INTERFACE
 /**
