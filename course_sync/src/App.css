@@ -1,108 +1,341 @@
 :root {
-  --base-light: #00ffff;
-  --base-dark: #00008b;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
+  --primary: #2D6A4F;
+  --secondary: #40916C;
+  --accent: #FFD166;
+  --base-bg: #f7fafb;
+  --navbar-bg: var(--primary);
+  --navbar-text: #fff;
+  --text-main: #202929;
+  --text-secondary: #417354;
+  --card-bg: #fff;
+  --card-shadow: 0 2px 12px 0 rgba(61, 95, 65, 0.07);
+  --keyword-bg: var(--secondary);
+  --keyword-text: #fff;
+  --tab-bg: #eee;
+  --tab-active-bg: var(--secondary);
+  --tab-text: #314d36;
+  --tab-active-text: #fff;
+  --border-color: #e2e2e2;
+  --extract-bg: #F1FFE3;
 }
 
-body {
-  margin: 0;
-  font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-  background-color: var(--base-dark);
-  color: var(--text-color);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.app {
+/* Main app wrapper */
+.app.cs-theme {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  background: var(--base-bg);
+  color: var(--text-main);
+  font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
 }
 
-.navbar {
-  background-color: var(--base-dark);
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border-color);
-  position: fixed;
-  top: 0;
-  width: 100%;
-  box-sizing: border-box;
-  z-index: 100;
-}
-
-.logo {
-  font-size: 1.25rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.logo-symbol {
-  color: var(--base-light);
-}
-
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 24px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.hero {
-  padding-top: 120px;
-  padding-bottom: 64px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-.subtitle {
-  color: var(--base-light);
-  font-weight: 500;
-  font-size: 1.1rem;
-}
-
-.title {
-  font-size: 3.5rem;
-  font-weight: 600;
-  line-height: 1.2;
+/* NAVBAR */
+.navbar.cs-navbar {
+  background: var(--navbar-bg);
+  color: var(--navbar-text);
+  padding: 0;
   margin: 0;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  box-shadow: 0 1px 8px rgba(45, 106, 79, 0.05);
+  z-index: 10;
+  display: flex;
+  align-items: center;
 }
 
-.description {
-  font-size: 1.1rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  max-width: 600px;
-  margin-bottom: 16px;
+.navbar-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  height: 64px;
 }
 
-.btn {
-  background-color: var(--base-light);
-  color: white;
-  border: none;
+.cs-logo {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 1.30rem;
+  letter-spacing: -0.5px;
+  gap: 10px;
+}
+
+.cs-logo-symbol {
+  color: var(--accent);
+  font-size: 1.45em;
+}
+.cs-logo-text {
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.cs-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.cs-nav-link {
+  color: var(--navbar-text);
+  text-decoration: none;
+  font-weight: 400;
+  font-size: 1.07em;
+  opacity: 0.84;
+  position: relative;
+  transition: color 0.15s;
+  padding: 4px 6px;
   border-radius: 4px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  font-weight: 500;
+}
+.cs-nav-link:hover,
+.cs-nav-link.active {
+  background: rgba(255,255,255,0.09);
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* MAIN CONTENT CONTAINER */
+.cs-main {
+  padding-top: 70px;
+}
+
+.cs-main-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: none;
+  padding: 24px 24px 36px 24px;
+  min-height: calc(100vh - 90px);
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ===== UPLOAD SECTION ===== */
+.cs-upload-section {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: var(--card-shadow);
+  padding: 32px 24px 26px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 0;
+  gap: 10px;
+}
+.cs-section-title {
+  font-size: 1.55em;
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+.cs-section-subtitle {
+  font-size: 1.10em;
+  font-weight: 600;
+  color: var(--primary);
+  opacity: 0.86;
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.cs-upload-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+.cs-btn-accent {
+  background: var(--accent);
+  color: var(--primary);
+  border: none;
+  font-weight: 600;
+  font-size: 1.03em;
+  border-radius: 5px;
+  padding: 10px 23px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  box-shadow: 0 1px 2px rgba(45,106,79,0.03);
+  transition: background 0.14s;
+}
+.cs-btn-accent:hover {
+  background: #ffe273;
+}
+.cs-upload-filename {
+  color: var(--primary);
+  font-size: 1.01em;
+  padding: 2px 8px;
+}
+.cs-extracting-msg {
+  color: var(--secondary);
+  font-size: 1em;
+  font-style: italic;
+  margin-left: 10px;
 }
 
-.btn:hover {
-  background-color: #7691ff;
+.cs-helper-text {
+  font-size: 0.98em;
+  color: var(--text-secondary);
+  margin-top: 1px;
+  opacity: 0.68;
 }
 
-.btn-large {
-  padding: 12px 24px;
-  font-size: 1.1rem;
+/* ===== EXTRACTED KEYWORDS/TOPICS ===== */
+.cs-keywords-section {
+  background: var(--extract-bg);
+  padding: 18px 24px 16px 24px;
+  border-radius: 11px;
+  box-shadow: 0 1px 5px rgba(45, 106, 79, 0.045);
+}
+.cs-keywords-list {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+.cs-keyword {
+  background: var(--keyword-bg);
+  color: var(--keyword-text);
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 0.98em;
+  font-weight: 500;
+  opacity: 0.97;
+  letter-spacing: 0.3px;
+}
+
+/* ====== TABS SECTION ====== */
+.cs-tabs-section {
+  background: #fff;
+  margin-top: 0;
+  border-radius: 11px;
+  box-shadow: var(--card-shadow);
+  padding: 18px 18px 22px 18px;
+}
+
+.cs-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1.5px solid var(--border-color);
+  margin-bottom: 19px;
+}
+
+.cs-tab-btn {
+  background: var(--tab-bg);
+  color: var(--tab-text);
+  border: none;
+  border-radius: 10px 10px 0 0;
+  padding: 13px 36px 10px 36px;
+  font-size: 1.07em;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.14s, color 0.14s;
+  margin-right: 6px;
+  outline: none;
+  opacity: 0.85;
+}
+.cs-tab-btn.active, .cs-tab-btn[aria-selected=true] {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+  opacity: 1;
+  position: relative;
+  z-index: 1;
+}
+.cs-tab-btn:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.cs-tab-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 7px 5px 0 3px;
+  min-height: 110px;
+}
+
+/* Recommendation Cards */
+.rec-card {
+  background: #f9fff8;
+  border: 1px solid #ddeee3;
+  border-radius: 8px;
+  box-shadow: 0 1.5px 7px rgba(65,147,108, 0.07);
+  padding: 16px 24px;
+  width: 270px;
+  min-height: 98px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: space-between;
+}
+.rec-title {
+  font-size: 1.08em;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+.rec-summary {
+  color: #628169;
+  font-size: 0.99em;
+  margin-bottom: 2px;
+}
+
+.rec-meta {
+  font-size: 0.95em;
+  opacity: 0.75;
+  margin-bottom: 3px;
+}
+.rec-action {
+  align-self: flex-start;
+  font-weight: 500;
+  color: var(--secondary);
+  font-size: 0.97em;
+  margin-top: 6px;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+.rec-action:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.cs-welcome-prompt {
+  text-align: center;
+  margin: 30px 0 0 0;
+}
+.cs-brand-hero {
+  margin-top: 25px;
+  margin-bottom: 18px;
+}
+.cs-app-title {
+  color: var(--primary);
+  font-size: 2.45em;
+  font-weight: 700;
+  letter-spacing: -1.1px;
+  margin: 0 0 9px 0;
+}
+.cs-app-desc {
+  color: var(--text-secondary);
+  font-size: 1.13em;
+  font-weight: 400;
+  margin: 0 auto;
+  max-width: 540px;
+  line-height: 1.45;
+}
+
+@media (max-width: 650px) {
+  .navbar-inner {
+    padding: 0 9px;
+  }
+  .cs-main-container {
+    padding: 13px 2vw 28px 2vw;
+  }
+  .cs-tabs-section,
+  .cs-upload-section,
+  .cs-keywords-section {
+    padding: 13px 4px 13px 6px;
+  }
+  .rec-card {
+    min-width: 92vw;
+    width: 99%;
+    padding: 13px 8px;
+  }
 }
