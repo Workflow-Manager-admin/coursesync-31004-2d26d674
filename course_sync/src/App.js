@@ -732,4 +732,153 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
   );
 }
 
+/**
+ * KeywordEditor component.
+ * Lets users review, remove, or add keywords before proceeding to recommendations.
+ * Props:
+ *  - initialKeywords: string[] (required)
+ *  - onConfirm: function(newList: string[]) => void (required)
+ *  - confirmed: boolean (whether user already confirmed; disables editing)
+ */
+function KeywordEditor({ initialKeywords = [], onConfirm, confirmed }) {
+  const [keywords, setKeywords] = useState(initialKeywords);
+  const [newKeyword, setNewKeyword] = useState("");
+  const [error, setError] = useState(null);
+
+  // Keep local state in sync if the source changes
+  useEffect(() => {
+    setKeywords(initialKeywords || []);
+    setError(null);
+    setNewKeyword("");
+  }, [initialKeywords]);
+
+  // Remove a keyword by index
+  function handleRemove(idx) {
+    setKeywords(ks => ks.filter((_, i) => i !== idx));
+  }
+  // Add a keyword (with cleaning, no duplicates)
+  function handleAdd() {
+    let candidate = newKeyword.trim();
+    if (!candidate) return;
+    // Only allow letters, spaces, hyphens
+    if (!/^[\w -]{2,100}$/.test(candidate)) {
+      setError("Invalid keyword.");
+      return;
+    }
+    if (keywords.map(k => k.toLowerCase()).includes(candidate.toLowerCase())) {
+      setError("Already exists.");
+      return;
+    }
+    if (keywords.length >= 12) {
+      setError("Maximum 12 keywords allowed.");
+      return;
+    }
+    setKeywords([...keywords, candidate]);
+    setNewKeyword("");
+    setError(null);
+  }
+  // Confirm & lock-in the user's keywords, then proceed.
+  function handleConfirm() {
+    // Must have at least one
+    if (keywords.length === 0) {
+      setError("Please enter at least one keyword.");
+      return;
+    }
+    onConfirm && onConfirm(keywords);
+  }
+
+  return (
+    <div>
+      <div className="cs-keywords-list" style={{marginBottom: 10}}>
+        {keywords.length === 0 ? (
+          <span style={{color: "#7C4F37", fontWeight: 500}}>No keywords. Add at least one to continue.</span>
+        ) : (
+          keywords.map((key, idx) => (
+            <span className="cs-keyword" key={key + idx} style={{display: "flex", alignItems: "center", gap: 6}}>
+              {key}
+              {!confirmed && (
+                <button
+                  type="button"
+                  aria-label={`Remove "${key}"`}
+                  style={{
+                    marginLeft: 6,
+                    background: "transparent",
+                    color: "#FFD166",
+                    border: "none",
+                    fontWeight: "bold",
+                    fontSize: "1.1em",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => handleRemove(idx)}
+                  tabIndex={0}
+                >
+                  ×
+                </button>
+              )}
+            </span>
+          ))
+        )}
+      </div>
+      {!confirmed && (
+        <>
+          <div style={{display: "flex", gap: 8, alignItems: "center", marginBottom: 10}}>
+            <input
+              type="text"
+              value={newKeyword}
+              disabled={confirmed}
+              maxLength={80}
+              onChange={e => {
+                setNewKeyword(e.target.value.replace(/[^\w \-]/g, ""));
+                setError(null);
+              }}
+              onKeyDown={e => {
+                if (e.key === "Enter") { e.preventDefault(); handleAdd(); }
+              }}
+              placeholder="Add keyword"
+              style={{
+                fontSize: "1.01em",
+                padding: "7px 12px",
+                borderRadius: "7px",
+                border: "1.2px solid #D8BFAA",
+                flex: 1,
+                minWidth: 0,
+                maxWidth: 188
+              }}
+              aria-label="Add a keyword"
+            />
+            <button
+              className="btn cs-btn-accent"
+              style={{maxWidth: 62, minHeight: 33}}
+              type="button"
+              disabled={confirmed}
+              onClick={handleAdd}
+            >Add</button>
+          </div>
+          <div style={{ marginBottom: 8, minHeight: 18 }}>
+            {error && <span style={{ color: "#B02E25" }}>{error}</span>}
+          </div>
+          <button
+            className="btn cs-btn-accent"
+            style={{
+              background: "#4B2E25",
+              color: "#FFD9BF",
+              minWidth: 130,
+              fontWeight: 700
+            }}
+            type="button"
+            onClick={handleConfirm}
+            disabled={keywords.length === 0}
+            aria-label="Proceed to recommendations"
+          >
+            Proceed to Recommendations
+          </button>
+        </>
+      )}
+      {confirmed && (
+        <div style={{marginTop: 5, color: "#D6C7A1", fontWeight: 700}}>✓ Confirmed. Recommendations loaded below.</div>
+      )}
+    </div>
+  );
+}
+
 export default App;
