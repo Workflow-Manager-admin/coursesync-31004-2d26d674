@@ -56,10 +56,10 @@ body {
   color: var(--navbar-text);
   margin: 0;
   padding: 0;
-  height: 64px;
+  height: 65px;
   position: sticky;
   top: 0;
-  box-shadow: 0 1.5px 8px rgba(45,106,79,0.09);
+  box-shadow: 0 1.5px 9px rgba(45,106,79,0.11);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -72,55 +72,67 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 32px;
-  height: 64px;
+  padding: 0 30px;
+  height: 65px;
 }
 
 .cs-logo {
   display: flex;
   align-items: center;
-  font-weight: 800;
-  font-size: 1.30rem;
-  letter-spacing: -0.5px;
-  gap: 11px;
+  font-weight: 900;
+  font-size: 1.35rem;
+  letter-spacing: -0.8px;
+  gap: 13px;
+  text-shadow: 0 1px 3px #1a46311a;
+  line-height: 1;
 }
 .cs-logo-symbol {
   color: var(--accent);
-  font-size: 1.43em;
+  font-size: 1.48em;
+  margin-right: -3px;
 }
 .cs-logo-text {
   color: #fff;
   letter-spacing: 0.4px;
-  font-size: 1.13em;
+  font-size: 1.16em;
+  font-weight: 800;
+  font-family: inherit;
+  text-shadow: 0 1.5px 8px #2d6a4f2f;
 }
 
 .cs-nav-links {
   display: flex;
   align-items: center;
-  gap: 26px;
+  gap: 31px;
 }
 
 .cs-nav-link {
   color: var(--navbar-text);
   text-decoration: none;
   font-weight: 500;
-  font-size: 1.07em;
-  opacity: 0.89;
+  font-size: 1.08em;
+  opacity: 0.92;
   position: relative;
-  border-radius: 5px;
-  padding: 4px 8px;
-  transition: background 0.15s, color 0.13s, opacity 0.17s;
+  border-radius: 6px;
+  padding: 5px 11px;
+  transition: background 0.15s, color 0.14s, opacity 0.17s, box-shadow 0.12s;
   outline: none;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
+  border: 2px solid transparent;
+  box-sizing: border-box;
 }
 .cs-nav-link:hover,
 .cs-nav-link.active {
-  background: rgba(255,255,255,0.13);
+  background: rgba(255,255,255,0.15);
   color: var(--accent);
   opacity: 1;
+  border-color: #ffd16677;
+  box-shadow: 0 0 0 3px #ffd16622;
 }
 .cs-nav-link:focus {
   box-shadow: var(--focus-ring);
+  outline: none;
+  border-color: var(--accent);
 }
 
 /* MAIN CONTENT CONTAINER */
