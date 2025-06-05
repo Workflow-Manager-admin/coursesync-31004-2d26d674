@@ -456,7 +456,20 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
               <div className="rec-title">{rec.title}</div>
               <div className="rec-summary">{rec.summary}</div>
               <div className="rec-meta">{rec.meta}</div>
-              <div className="rec-action">{rec.action}</div>
+              {rec.resourceLink ? (
+                <a
+                  className="rec-action"
+                  href={rec.resourceLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontWeight: 700, color: "#7C4F37", textDecoration: "underline" }}
+                  aria-label={rec.action}
+                >
+                  {rec.action}
+                </a>
+              ) : (
+                <div className="rec-action">{rec.action}</div>
+              )}
               {onSaveFavorite && (
                 isFavorited(rec) ? (
                   <span style={{

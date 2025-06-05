@@ -105,7 +105,19 @@ export default function Dashboard({ onClose }) {
                   <div className="rec-title" style={{ color: "#7C4F37" }}>{item.title}</div>
                   <div className="rec-summary" style={{ color: "#2B1F1A" }}>{item.summary}</div>
                   <div className="rec-meta">{item.meta}</div>
-                  <div className="rec-action" style={{ color: "#7C4F37" }}>{item.action}</div>
+                  {item.resourceLink ? (
+                    <a
+                      className="rec-action"
+                      href={item.resourceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#7C4F37", fontWeight: 700, textDecoration: "underline" }}
+                    >
+                      {item.action}
+                    </a>
+                  ) : (
+                    <div className="rec-action" style={{ color: "#7C4F37" }}>{item.action}</div>
+                  )}
                   <button
                     aria-label="Remove from favorites"
                     onClick={() => removeFavorite(item._fvKey)}
