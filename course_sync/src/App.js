@@ -230,53 +230,48 @@ function App() {
   }
 
   /*
-   * ---- PDF Extraction (pdfjs-dist v5+ compatibility) ----
-   * 
-   * - For pdfjs-dist v5+, the build/pdf.worker.min.js script is no longer distributed.
-   * - DO NOT assign pdfjs.GlobalWorkerOptions.workerSrc (importing or referencing this file is a v4- only pattern)
-   * - By default (in v5+), PDF.js tries to create a real web worker, and falls back to a "fake worker" in dev, with a warning.
-   * - The fake worker is single-threaded and can process small PDFs normally, but may fail or error for very large/complex PDFs.
-   * - Fake worker warning is non-fatal: usually just a dev console warning unless error actually thrown.
-   * - Best practice: 
-   *      (a) Never set workerSrc for v5+. 
-   *      (b) Catch 'fakeworker' error messages in JS and display a user-friendly error if thrown.
-   *      (c) All other errors from PDF extraction (including unreadable files) must be caught and shown to user, but should NOT break app.
+   * ---- PDF Extraction (pdfjs-dist v5+ compatibility; robust error handling) ----
+   *
+   * - For pdfjs-dist v5+:
+   *     • The build/pdf.worker.min.js script is no longer shipped (importing and setting workerSrc is obsolete and should NOT be done!)
+   *     • By default, PDF.js will try to launch a real Web Worker. If it fails (e.g. on localhost, non-standard browsers, older browsers, or no cross-origin isolation), it falls back to a "fake worker" (single-threaded).
+   *     • The "fake worker" triggers a console warning but usually allows small/medium PDFs to be extracted. Large PDFs or special browser environments (e.g. missing SharedArrayBuffer) may fail entirely.
+   *     • If PDF extraction fails, always display a clear, user-friendly error and allow workflow to proceed (e.g. by domain input).
+   *     • This function never tries to set workerSrc—and we don't reference the old worker script file.
+   *     • We catch fake worker errors/console warnings (if they cause actual errors), and all other errors, with fallback and explanatory UI comments.
    */
 
   // PUBLIC_INTERFACE
   /**
-   * Extracts all text content from a PDF file using pdfjs-dist v5+ (no manual workerSrc required).
-   * Catches and handles fake worker warnings/errors robustly.
-   * Shows user-friendly error messages if parsing fails.
-   * @param {File} file - the PDF file (from input element)
-   * @returns {Promise<string>} - extracted plain text contents
+   * Extracts all text content from a PDF file using pdfjs-dist v5+ (requires no manual workerSrc).
+   * Handles:
+   *   - Fallback to fake worker (if true browser worker unsupported)
+   *   - All errors (including those stemming from fakeworker or browser CSP/security)
+   *   - User-friendly error text for all error scenarios
+   *   - Never breaks workflow: user can always proceed to domain/keyword input if PDF fails.
+   * @param {File} file - PDF File object (from input)
+   * @returns {Promise<string>} - extracted plain text (throws with clean message on failure)
    */
   async function extractTextFromPDF(file) {
     try {
-      // Import PDF.js v5+ (legacy build).
-      // DO NOT set workerSrc for v5+. Default behavior is to attempt worker, fall back to fake worker and log a warning.
-      // If fakeWorker error is thrown (rare), catch below and present a user-friendly alert.
+      // Import PDF.js v5+ (legacy build for browser); workerSrc is obsolete in v5+.
+      // This import triggers PDF.js to internally attempt to create its own worker.
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
-
-      /*
-       * No need to assign pdfjsLib.GlobalWorkerOptions.workerSrc.
-       * See discussion: https://github.com/mozilla/pdf.js/issues/16847#issuecomment-1875701104
-       * PDF.js v5+ attempts to launch a real worker automatically, else falls back to single-thread/fake worker.
-       * If user gets a fakeWorker warning, extraction usually still works unless on very large PDFs.
-       */
+      // DO NOT set pdfjsLib.GlobalWorkerOptions.workerSrc (not needed; would break in v5+)
 
       const arrayBuffer = await file.arrayBuffer();
+
       let pdf;
       try {
-        // Try loading the PDF document (returns promise, may warn about fake worker).
+        // Try to parse PDF. On some browsers or when lacking worker support, PDF.js will fallback and throw a fakeworker error here.
         pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       } catch (err) {
-        // Sometimes, pdfjs-dist throws a fake worker related error here.
-        if (err?.message && err.message.match(/fakeworker|worker.*missing|Cannot launch.*worker/i)) {
+        // If fake worker or worker missing errors arise, catch and show human-friendly message.
+        if (err?.message && /fakeworker|worker.*missing|Cannot launch.*worker/i.test(err.message)) {
           throw new Error(
             "PDF extraction failed due to browser security restrictions or missing worker support. " +
-            "Try a different browser, or use a smaller PDF file. " +
-            "Ask your administrator to enable SharedArrayBuffer support."
+            "Try a different (modern) browser, or use a smaller PDF file. " +
+            "If you are using an older browser or custom environment, PDF extraction may be limited."
           );
         }
         throw err;
@@ -290,19 +285,19 @@ function App() {
           const pageText = content.items.map(item => item.str).join(" ");
           text += " " + pageText;
         } catch (pageErr) {
-          // Gracefully skip unreadable pages but note problem
+          // Gracefully skip unreadable pages; add a marker.
           text += " [Unreadable page]";
         }
       }
       return text;
     } catch (e) {
-      // Provide a clear generic error for user, differentiating fake worker issues
+      // All exceptions here: Report with friendly message, including fakeworker/capability issues.
       if (e.message && e.message.includes("Failed to extract from PDF")) {
-        throw e; // Already user-friendly
+        throw e; // Already human-friendly wording
       }
       throw new Error(
         /fakeworker|worker.*missing|Cannot launch.*worker/i.test(e.message || '')
-          ? "Failed to extract from PDF: This browser may not support PDF parsing without a real web worker. Try uploading a smaller file, or use a recent Chrome/Firefox version."
+          ? "Failed to extract from PDF: This browser or environment does not support full PDF parsing. Try a smaller file or switch to a mainstream browser (like new Chrome or Firefox)."
           : "Failed to extract from PDF: " + (e.message || e.toString())
       );
     }
