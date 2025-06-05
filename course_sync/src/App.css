@@ -62,14 +62,14 @@ body {
 
 /* NAVBAR */
 .navbar.cs-navbar {
-  background: var(--navbar-bg);
-  color: var(--navbar-text);
+  background: var(--header-bg);
+  color: var(--highlight-text);
   margin: 0;
   padding: 0;
   height: 65px;
   position: sticky;
   top: 0;
-  box-shadow: 0 1.5px 9px rgba(45,106,79,0.11);
+  box-shadow: 0 1.5px 9px rgba(75,46,37,0.14);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -93,21 +93,21 @@ body {
   font-size: 1.35rem;
   letter-spacing: -0.8px;
   gap: 13px;
-  text-shadow: 0 1px 3px #1a46311a;
+  text-shadow: 0 1px 5px #4B2E2515;
   line-height: 1;
 }
 .cs-logo-symbol {
-  color: var(--accent);
+  color: var(--cta-green);
   font-size: 1.48em;
   margin-right: -3px;
 }
 .cs-logo-text {
-  color: #fff;
+  color: var(--highlight-text);
   letter-spacing: 0.4px;
   font-size: 1.16em;
   font-weight: 800;
   font-family: inherit;
-  text-shadow: 0 1.5px 8px #2d6a4f2f;
+  text-shadow: 0 1.5px 8px #7C4F3734;
 }
 
 .cs-nav-links {
@@ -117,7 +117,7 @@ body {
 }
 
 .cs-nav-link {
-  color: var(--navbar-text);
+  color: var(--highlight-text);
   text-decoration: none;
   font-weight: 500;
   font-size: 1.08em;
@@ -125,24 +125,24 @@ body {
   position: relative;
   border-radius: 6px;
   padding: 5px 11px;
-  transition: background 0.15s, color 0.14s, opacity 0.17s, box-shadow 0.12s;
+  transition: background 0.17s, color 0.14s, opacity 0.17s, box-shadow 0.12s;
   outline: none;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.08em;
   border: 2px solid transparent;
   box-sizing: border-box;
 }
 .cs-nav-link:hover,
 .cs-nav-link.active {
-  background: rgba(255,255,255,0.15);
-  color: var(--accent);
+  background: var(--subtle-section-bg);
+  color: var(--accent-button);
   opacity: 1;
-  border-color: #ffd16677;
-  box-shadow: 0 0 0 3px #ffd16622;
+  border-color: var(--cta-green);
+  box-shadow: 0 0 0 3px #d8bfaa45;
 }
 .cs-nav-link:focus {
   box-shadow: var(--focus-ring);
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--accent-button);
 }
 
 /* MAIN CONTENT CONTAINER */
