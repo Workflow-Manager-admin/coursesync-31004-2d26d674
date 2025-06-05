@@ -291,8 +291,9 @@ function App() {
     setSelectedFile(file);
     setFileName(file.name);
     setExtractedKeywords([]);
-    setExtracting(true);
     setIsExtracted(false);
+    setEditedKeywords(null);
+    setExtracting(true);
 
     let text = "";
     let errorMsg = "";
@@ -321,6 +322,7 @@ function App() {
     } catch (err) {
       setExtractedKeywords([]);
       setIsExtracted(false);
+      setEditedKeywords(null);
       errorMsg = err.message || "Failed to extract keywords!";
     }
     setExtracting(false);
@@ -343,6 +345,7 @@ function App() {
     if (trimmed.length < 2) return;
     setExtractedKeywords([]);
     setIsExtracted(false);
+    setEditedKeywords(null);
     setDomainLoading(true);
     setManualDomain(trimmed);
     // Simulate AI keyword extraction: just use the domain as the single topic (for demo)
