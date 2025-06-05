@@ -1,29 +1,39 @@
 :root {
-  /* CourseSync refined color palette */
-  --primary: #2D6A4F;
-  --primary-dark: #1A4631;
-  --secondary: #40916C;
-  --accent: #FFD166;
-  --background: #f7fafb;
-  --background-dark: #eef3ef;
+  /* Mocha-inspired CourseSync color palette */
+  --header-bg: #4B2E25;
+  --main-bg: #F6F1EA;
+  --accent-button: #7C4F37;
+  --highlight-text: #E6D5C3;
+  --subtle-section-bg: #D8BFAA;
+  --text-primary: #2B1F1A;
+  --cta-green: #D6C7A1;
+
+  /* Updated CSS variables for legacy selectors */
+  --primary: #7C4F37;
+  --primary-dark: #4B2E25;
+  --secondary: #D8BFAA;
+  --accent: #7C4F37;
+  --background: #F6F1EA;
+  --background-dark: #E6D5C3;
   --card-bg: #fff;
-  --card-shadow: 0 2px 12px rgba(45, 106, 79, 0.11);
-  --border-color: #ddeee3;
-  --text-main: #22372A;
-  --text-secondary: #496c53;
-  --text-light: #83B68A;
-  --navbar-bg: #2D6A4F;
-  --navbar-text: #fff;
-  --tab-bg: #f4f8f2;
-  --tab-active-bg: var(--secondary);
-  --tab-text: #294C39;
-  --tab-active-text: #fff;
-  --extract-bg: #F2FFEC;
-  --keyword-bg: #40916C;
-  --keyword-text: #fff;
-  --highlight: #e3fae2;
-  --focus-ring: 0 0 0 3px #FFD16677;
+  --card-shadow: 0 2px 12px rgba(75, 46, 37, 0.13); /* slightly darker shadow */
+  --border-color: #D8BFAA;
+  --text-main: #2B1F1A;
+  --text-secondary: #7C4F37;
+  --text-light: #E6D5C3;
+  --navbar-bg: #4B2E25;
+  --navbar-text: #E6D5C3;
+  --tab-bg: #D8BFAA;
+  --tab-active-bg: #7C4F37;
+  --tab-text: #4B2E25;
+  --tab-active-text: #F6F1EA;
+  --extract-bg: #E6D5C3;
+  --keyword-bg: #7C4F37;
+  --keyword-text: #F6F1EA;
+  --highlight: #E6D5C3;
+  --focus-ring: 0 0 0 3px #D6C7A188;
 }
+
 
 html {
   font-size: 17px;
