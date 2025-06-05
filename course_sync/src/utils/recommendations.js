@@ -11,8 +11,7 @@
  * @returns {Promise<Array>} Array of internship recommendations.
  */
 export async function fetchInternships(topics = []) {
-  // Mock: Simulate filtering based on topics
-  // Add official platform URLs as reference for each rec.
+  // Reference URLs for each internship platform
   const internshalaUrl = "https://internshala.com/internships";
   const linkedinUrl = "https://www.linkedin.com/jobs/internships";
   const remotiveUrl = "https://remotive.com/remote-jobs/search?category=software-dev";
@@ -25,36 +24,36 @@ export async function fetchInternships(topics = []) {
       summary: "Develop microservices in Node.js for payment systems.",
       meta: "Remote | 2 months | Paid",
       action: "Apply on Internshala",
-      resourceLink: internshalaUrl
+      resourceLink: internshalaUrl,
     },
     {
       title: "AI Research Intern — NLP Lab",
       summary: "Help train large language models for text summarization.",
       meta: "Onsite | 3 months | Stipend",
       action: "See on Remotive",
-      resourceLink: remotiveUrl
+      resourceLink: remotiveUrl,
     },
     {
       title: "Software Engineering Intern — HealthTech",
       summary: "Build end-to-end cloud solutions for hospitals.",
       meta: "Hybrid | 6 months",
       action: "Apply via LinkedIn",
-      resourceLink: linkedinUrl
+      resourceLink: linkedinUrl,
     },
     {
       title: "Cybersecurity Analyst — SecureIT",
       summary: "Assess and mitigate security risks for web apps.",
       meta: "Remote | 3 months",
       action: "Find on Jooble",
-      resourceLink: joobleUrl
+      resourceLink: joobleUrl,
     },
     {
       title: "Database Intern — EduData Inc.",
       summary: "Help design distributed, scalable student record systems.",
       meta: "Onsite | 4 months",
       action: "Browse on AngelList",
-      resourceLink: angellistUrl
-    }
+      resourceLink: angellistUrl,
+    },
   ];
   await new Promise(r => setTimeout(r, 650)); // simulate network latency
 
@@ -92,50 +91,50 @@ export async function fetchCertifications(topics = []) {
       summary: "Master neural networks and AI concepts from Andrew Ng.",
       meta: "Coursera | Beginner to Advanced",
       action: "See on Coursera",
-      resourceLink: courseraUrl
+      resourceLink: courseraUrl,
     },
     {
       title: "Udemy: The Complete Node.js Developer Course",
       summary: "Hands-on course for making Node.js web apps.",
       meta: "Udemy | Self-paced",
       action: "Explore Udemy",
-      resourceLink: udemyUrl
+      resourceLink: udemyUrl,
     },
     {
       title: "edX: Software Engineering Essentials",
       summary: "Key skills for software project management.",
       meta: "edX | Free Option",
       action: "Start on edX",
-      resourceLink: edxUrl
+      resourceLink: edxUrl,
     },
     {
       title: "Skillshare: Agile for Software Teams",
       summary: "Learn agile project management and dev skills.",
       meta: "Skillshare | Self-guided",
       action: "Watch on Skillshare",
-      resourceLink: skillshareUrl
+      resourceLink: skillshareUrl,
     },
     {
       title: "FutureLearn: Cybersecurity Foundations",
       summary: "Intro to defending digital systems and networks.",
       meta: "FutureLearn | Short Course",
       action: "Start with FutureLearn",
-      resourceLink: futurelearnUrl
+      resourceLink: futurelearnUrl,
     },
     {
       title: "Google Cybersecurity Professional Cert",
       summary: "Build practical skills in defending computer systems.",
       meta: "Google Career | 6 months",
       action: "Enroll with Google",
-      resourceLink: googleCertsUrl
+      resourceLink: googleCertsUrl,
     },
     {
       title: "NLP Crash Course (DataCamp)",
       summary: "Apply NLP algorithms to real-world text problems.",
       meta: "DataCamp | Intermediate",
       action: "Try for Free",
-      resourceLink: datacampUrl
-    }
+      resourceLink: datacampUrl,
+    },
   ];
   await new Promise(r => setTimeout(r, 600));
   const filtered = topics.length
@@ -156,37 +155,55 @@ export async function fetchCertifications(topics = []) {
  * @returns {Promise<Array>} Array of project recommendations.
  */
 export async function fetchProjectIdeas(topics = []) {
+  // Reference search pages/platform docs for AI/ML ideas.
+  const openaiUrl = "https://platform.openai.com/examples";
+  const huggingfaceUrl = "https://huggingface.co/models?pipeline_tag=text-classification";
+  const witaiUrl = "https://wit.ai/experiences";
+  const dialogflowUrl = "https://dialogflow.cloud.google.com/#/docs";
+  const kaggleUrl = "https://www.kaggle.com/datasets";
   const exemplar = [
     {
       title: "Smart Campus Messenger",
       summary: "Build a cross-platform chat app for students using NLP moderation.",
       meta: "Tech: React, Node, NLP API",
-      action: "View idea details",
+      action: "Try OpenAI example",
+      resourceLink: openaiUrl,
     },
     {
       title: "Personal Expense Tracker with AI Insights",
       summary: "Track spending, get smart suggestions with ML analysis.",
       meta: "Tech: Django, Pandas, ML",
-      action: "See more",
+      action: "Explore on Kaggle",
+      resourceLink: kaggleUrl,
     },
     {
       title: "Resume Analyzer Bot",
       summary: "Analyze and summarize CVs, match to job profiles using LLM.",
       meta: "Python, OpenAI API",
-      action: "Explore guide",
+      action: "Open HuggingFace Models",
+      resourceLink: huggingfaceUrl,
     },
     {
-      title: "Distributed Database Visualizer",
-      summary: "Tool to visualize distributed data flows and replication.",
-      meta: "React, D3.js, MongoDB",
-      action: "See project doc",
+      title: "Conversational Assistant with Wit.ai",
+      summary: "Build a voice/text chatbot using Wit.ai NLP.",
+      meta: "Wit.ai, Node.js",
+      action: "Try on Wit.ai",
+      resourceLink: witaiUrl,
+    },
+    {
+      title: "Dialogflow Helpdesk Bot",
+      summary: "AI handles IT/helpdesk tickets using Dialogflow intent recognition.",
+      meta: "Dialogflow, GCP, React",
+      action: "View Dialogflow Docs",
+      resourceLink: dialogflowUrl,
     },
     {
       title: "AI-Driven Project Manager",
       summary: "Automate Gantt charts and task estimates using AI.",
       meta: "GPT, JS, PM Libraries",
-      action: "View more",
-    }
+      action: "See more OpenAI apps",
+      resourceLink: openaiUrl,
+    },
   ];
   await new Promise(r => setTimeout(r, 500));
   const filtered = topics.length
