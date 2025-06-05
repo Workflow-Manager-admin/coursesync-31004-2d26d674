@@ -229,6 +229,20 @@ function App() {
     return keyphrases;
   }
 
+  /*
+   * ---- PDF Extraction (pdfjs-dist v5+ compatibility) ----
+   * 
+   * - For pdfjs-dist v5+, the build/pdf.worker.min.js script is no longer distributed.
+   * - DO NOT assign pdfjs.GlobalWorkerOptions.workerSrc (importing or referencing this file is a v4- only pattern)
+   * - By default (in v5+), PDF.js tries to create a real web worker, and falls back to a "fake worker" in dev, with a warning.
+   * - The fake worker is single-threaded and can process small PDFs normally, but may fail or error for very large/complex PDFs.
+   * - Fake worker warning is non-fatal: usually just a dev console warning unless error actually thrown.
+   * - Best practice: 
+   *      (a) Never set workerSrc for v5+. 
+   *      (b) Catch 'fakeworker' error messages in JS and display a user-friendly error if thrown.
+   *      (c) All other errors from PDF extraction (including unreadable files) must be caught and shown to user, but should NOT break app.
+   */
+
   // PUBLIC_INTERFACE
   /**
    * Extracts all text content from a PDF file using pdfjs-dist v5+ (no manual workerSrc required).
