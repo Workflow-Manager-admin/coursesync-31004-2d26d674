@@ -486,26 +486,26 @@ body {
   border-radius: 6.5px;
   font-weight: 700;
   cursor: pointer;
-  background: var(--secondary);
-  color: #fff;
-  transition: background 0.13s, box-shadow 0.17s, color 0.13s;
-  box-shadow: 0 1px 2.5px #2d6a4f19;
+  background: var(--accent-button);
+  color: var(--highlight-text);
+  transition: background 0.15s, box-shadow 0.17s, color 0.14s;
+  box-shadow: 0 1px 2.5px #4b2e2511;
 }
 .btn:hover,
 .btn:active {
-  background: var(--primary);
-  color: var(--accent);
+  background: var(--header-bg);
+  color: var(--cta-green);
 }
 .btn:focus {
   box-shadow: var(--focus-ring);
   outline: none;
-  border: 2px solid var(--accent);
+  border: 2px solid var(--cta-green);
 }
 
 /* Saved badge */
 .saved-badge {
-  background: var(--accent);
-  color: #4a6352;
+  background: var(--cta-green);
+  color: var(--header-bg);
   font-weight: 800;
   border-radius: 6px;
   margin-top: 8px;
