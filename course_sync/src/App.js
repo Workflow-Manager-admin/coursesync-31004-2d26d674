@@ -231,75 +231,96 @@ function App() {
 
   /*
    * ---- PDF Extraction (pdfjs-dist v5+ compatibility; robust error handling) ----
-   *
-   * - For pdfjs-dist v5+:
-   *     • The build/pdf.worker.min.js script is no longer shipped (importing and setting workerSrc is obsolete and should NOT be done!)
-   *     • By default, PDF.js will try to launch a real Web Worker. If it fails (e.g. on localhost, non-standard browsers, older browsers, or no cross-origin isolation), it falls back to a "fake worker" (single-threaded).
-   *     • The "fake worker" triggers a console warning but usually allows small/medium PDFs to be extracted. Large PDFs or special browser environments (e.g. missing SharedArrayBuffer) may fail entirely.
-   *     • If PDF extraction fails, always display a clear, user-friendly error and allow workflow to proceed (e.g. by domain input).
-   *     • This function never tries to set workerSrc—and we don't reference the old worker script file.
-   *     • We catch fake worker errors/console warnings (if they cause actual errors), and all other errors, with fallback and explanatory UI comments.
+   * 
+   * - Never set workerSrc! pdfjs-dist v5+ manages its worker internally;
+   * - We gracefully catch *all* fake worker and environment errors, show user-friendly errors.
+   * - If extraction fails, feedback is prompt and clear. The rest of the UI remains usable (domain/manual input always works).
    */
 
   // PUBLIC_INTERFACE
   /**
-   * Extracts all text content from a PDF file using pdfjs-dist v5+ (requires no manual workerSrc).
+   * Extracts all text content from a PDF file using pdfjs-dist v5+ (never sets workerSrc).
    * Handles:
-   *   - Fallback to fake worker (if true browser worker unsupported)
-   *   - All errors (including those stemming from fakeworker or browser CSP/security)
-   *   - User-friendly error text for all error scenarios
-   *   - Never breaks workflow: user can always proceed to domain/keyword input if PDF fails.
+   *   - Fallback to fake worker (if browser does not allow real worker)
+   *   - All errors, including fakeworker/failure/error in unsupported environments
+   *   - User-friendly error UI for all error scenarios
+   *   - Never interrupts domain/keyword/manual input if PDF fails
    * @param {File} file - PDF File object (from input)
    * @returns {Promise<string>} - extracted plain text (throws with clean message on failure)
    */
   async function extractTextFromPDF(file) {
     try {
-      // Import PDF.js v5+ (legacy build for browser); workerSrc is obsolete in v5+.
-      // This import triggers PDF.js to internally attempt to create its own worker.
+      // Import PDF.js v5+. Never set workerSrc!
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
-      // DO NOT set pdfjsLib.GlobalWorkerOptions.workerSrc (not needed; would break in v5+)
+      // DO NOT set pdfjsLib.GlobalWorkerOptions.workerSrc for v5!
 
       const arrayBuffer = await file.arrayBuffer();
 
       let pdf;
       try {
-        // Try to parse PDF. On some browsers or when lacking worker support, PDF.js will fallback and throw a fakeworker error here.
+        // Try to parse PDF. If browser doesn't support web workers, pdfjs will auto-fallback to "fake worker" (single-threaded)
         pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       } catch (err) {
-        // If fake worker or worker missing errors arise, catch and show human-friendly message.
-        if (err?.message && /fakeworker|worker.*missing|Cannot launch.*worker/i.test(err.message)) {
+        // Handle fakeworker/failure/missing worker and similar issues
+        if (
+          err?.message &&
+          /(fakeworker|worker.*missing|Cannot launch.*worker|No "pdfjsWorker"|PDF.js v2 deprecated worker|pdfjs-dist:.*worker)/i.test(
+            err.message
+          )
+        ) {
           throw new Error(
-            "PDF extraction failed due to browser security restrictions or missing worker support. " +
-            "Try a different (modern) browser, or use a smaller PDF file. " +
-            "If you are using an older browser or custom environment, PDF extraction may be limited."
+            "PDF extraction failed because this browser or environment does not fully support PDF.js. " +
+              "Try using a different, modern browser (like the latest Chrome or Firefox), or upload a smaller/less complex PDF. " +
+              "You can still use the 'Enter Domain' option below."
           );
         }
         throw err;
       }
 
-      let text = '';
+      let text = "";
       for (let i = 1; i <= pdf.numPages; i++) {
         try {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          const pageText = content.items.map(item => item.str).join(" ");
+          // Concatenate all strings from the PDF content into text.
+          const pageText = content.items.map((item) => item.str).join(" ");
           text += " " + pageText;
         } catch (pageErr) {
-          // Gracefully skip unreadable pages; add a marker.
+          // Skip unreadable pages but add a marker so extraction continues gracefully.
           text += " [Unreadable page]";
         }
       }
       return text;
     } catch (e) {
-      // All exceptions here: Report with friendly message, including fakeworker/capability issues.
-      if (e.message && e.message.includes("Failed to extract from PDF")) {
-        throw e; // Already human-friendly wording
+      // At this point, any error, whether from pdfjs or downstream, should be wrapped for user feedback.
+      let msg =
+        typeof e.message === "string"
+          ? e.message
+          : typeof e === "string"
+          ? e
+          : "Unknown error";
+      // Enhance message if it's a known fakeworker or PDF.js environment limitation.
+      if (
+        /(fakeworker|worker.*missing|Cannot launch.*worker|No "pdfjsWorker"|PDF.js v2 deprecated worker|pdfjs-dist:.*worker)/i.test(
+          msg
+        )
+      ) {
+        msg =
+          "Failed to extract text from PDF: Your browser or environment does not fully support PDF.js extraction. " +
+          "Try uploading a smaller PDF, or switch to a modern Chrome or Firefox browser. " +
+          "You can still continue using the rest of the app or enter a domain manually below.";
+      } else if (/unsupported|not implemented|Invalid/i.test(msg)) {
+        msg =
+          "Failed to extract text from PDF: This PDF file is encrypted, malformed, or uses an unsupported feature. Try a different file or method.";
+      } else if (/aborted|cancelled|abort/i.test(msg)) {
+        msg =
+          "PDF extraction was aborted. Please try re-uploading, or use the 'Enter Domain' method instead.";
+      } else if (
+        !/Failed to extract|PDF extraction|domain manually/i.test(msg)
+      ) {
+        msg = "Failed to extract text from PDF: " + msg;
       }
-      throw new Error(
-        /fakeworker|worker.*missing|Cannot launch.*worker/i.test(e.message || '')
-          ? "Failed to extract from PDF: This browser or environment does not support full PDF parsing. Try a smaller file or switch to a mainstream browser (like new Chrome or Firefox)."
-          : "Failed to extract from PDF: " + (e.message || e.toString())
-      );
+      throw new Error(msg);
     }
   }
 
@@ -344,7 +365,9 @@ function App() {
         } catch (err) {
           pdfWorkerError = Boolean(
             err?.message &&
-            /fakeworker|worker.*missing|Cannot launch.*worker/i.test(err.message)
+            /(fakeworker|worker.*missing|Cannot launch.*worker|No "pdfjsWorker"|PDF.js v2 deprecated worker|pdfjs-dist:.*worker)/i.test(
+              err.message
+            )
           );
           errorMsg = err.message || "Failed to extract from PDF file.";
         }
