@@ -1,5 +1,5 @@
 :root {
-  /* CourseSync palette */
+  /* CourseSync refined color palette */
   --primary: #2D6A4F;
   --primary-dark: #1A4631;
   --secondary: #40916C;
@@ -7,26 +7,27 @@
   --background: #f7fafb;
   --background-dark: #eef3ef;
   --card-bg: #fff;
-  --card-shadow: 0 2px 12px rgba(45, 106, 79, 0.09);
+  --card-shadow: 0 2px 12px rgba(45, 106, 79, 0.11);
   --border-color: #ddeee3;
   --text-main: #22372A;
-  --text-secondary: #4a6652;
-  --text-light: #8DB596;
+  --text-secondary: #496c53;
+  --text-light: #83B68A;
   --navbar-bg: #2D6A4F;
   --navbar-text: #fff;
-  --tab-bg: #eef4f0;
+  --tab-bg: #f4f8f2;
   --tab-active-bg: var(--secondary);
-  --tab-text: #22372A;
+  --tab-text: #294C39;
   --tab-active-text: #fff;
   --extract-bg: #F2FFEC;
   --keyword-bg: #40916C;
   --keyword-text: #fff;
   --highlight: #e3fae2;
-  --focus-ring: 0 0 0 3px #FFD16666;
+  --focus-ring: 0 0 0 3px #FFD16677;
 }
 
 html {
   font-size: 17px;
+  line-height: 1.58;
   background: var(--background);
 }
 
@@ -34,9 +35,12 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
   background: var(--background);
   color: var(--text-main);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.003em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app.cs-theme {
