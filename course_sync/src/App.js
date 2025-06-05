@@ -315,8 +315,8 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
               {onSaveFavorite && (
                 isFavorited(rec) ? (
                   <span style={{
-                    background: "#FFD166",
-                    color: "#aaa",
+                    background: "#D6C7A1", // cta-green
+                    color: "#4B2E25",      // header-bg
                     fontWeight: 700,
                     borderRadius: 5,
                     marginTop: 7,
@@ -331,7 +331,9 @@ function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
                       marginTop: 8,
                       padding: "7px 17px",
                       alignSelf: "flex-start",
-                      fontSize: "0.98em"
+                      fontSize: "0.98em",
+                      background: "#7C4F37",
+                      color: "#E6D5C3"
                     }}
                     onClick={() => onSaveFavorite(rec, favType())}
                     aria-label="Add to favorites"
