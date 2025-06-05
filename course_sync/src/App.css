@@ -249,28 +249,30 @@ body {
 /* EXTRACTED KEYWORDS/TOPICS */
 .cs-keywords-section {
   background: var(--extract-bg);
-  padding: 22px 28px 18px 28px;
-  border-radius: 12px;
-  box-shadow: 0 1.5px 6px rgba(45, 106, 79, 0.055);
+  padding: 22px 30px 18px 30px;
+  border-radius: 14px;
+  box-shadow: 0 2px 9px rgba(64, 145, 108, 0.07);
   border: 1.2px solid #eaf6ea;
 }
 .cs-keywords-list {
   display: flex;
-  gap: 11px;
+  gap: 13px;
   flex-wrap: wrap;
-  margin-top: 8px;
+  margin-top: 9px;
 }
 .cs-keyword {
   background: var(--keyword-bg);
   color: var(--keyword-text);
-  padding: 8px 16px;
-  border-radius: 9px;
-  font-size: 1em;
-  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 11px;
+  font-size: 1.05em;
+  font-weight: 700;
   opacity: 1;
-  letter-spacing: 0.23px;
-  transition: background 0.14s;
-  box-shadow: 0 1px 4px #4073601e;
+  letter-spacing: 0.24px;
+  transition: background 0.13s, box-shadow 0.13s;
+  box-shadow: 0 1px 7px #40736011;
+  outline: none;
+  user-select: none;
 }
 
 /* TABS SECTION */
