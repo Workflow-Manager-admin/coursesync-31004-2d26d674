@@ -83,46 +83,102 @@ function App() {
     setDomainLoading(false);
   }
 
-  // Extract keywords from plain text using keyword-extractor or fallback to frequency analysis.
+  /**
+   * PUBLIC_INTERFACE
+   * Extract keyphrases from plain text using a robust approach:
+   * - Use "keyword-extractor" noun/expression extraction (English)
+   * - Remove stopwords and filter out very common/meaningless words
+   * - Prefer multi-word phrases if available, otherwise fallback to best high-signal single words
+   * - Handles text from both PDF and DOCX sources
+   * @param {string} text
+   * @param {number} count Number of keyphrases to return (default 7)
+   * @returns {Promise<string[]>}
+   */
   async function extractKeywordsFromText(text, count = 7) {
-    let keywords = [];
+    // List of very common academic and frequent words to remove beyond keyword-extractor's built-in stopwords
+    const COMMON_WORDS = new Set([
+      "introduction", "outline", "objectives", "module", "chapter", "syllabus",
+      "student", "teacher", "course", "university", "college", "teacher", "learning", 
+      "study", "week", "unit", "assessment", "instruction", "assignment", "project", 
+      "exam", "lesson", "evaluation", "reference", "textbook", "references"
+    ]);
+    let keyphrases = [];
     try {
-      // Try keyword-extractor if available
+      // Use keyword-extractor (noun phrases, not just word roots)
       const extractor = await import("keyword-extractor");
-      keywords = extractor.default.extract(text, {
+      // Use extract() with option to get phrases
+      let phrases = extractor.default.extract(text, {
         language: "english",
         remove_digits: true,
         return_changed_case: true,
-        remove_duplicates: true
+        remove_duplicates: false
       });
-      // Frequency count
-      const freq = {};
-      for (let k of keywords) {
-        freq[k] = (freq[k] || 0) + 1;
+
+      // Remove single-letter and very short words, and enforce a minimum char/word count for phrases
+      phrases = phrases
+        .map(phrase => phrase.trim())
+        .filter(k =>
+          k &&
+          k.length > 2 &&
+          !/^[a-z]$/.test(k) &&
+          !COMMON_WORDS.has(k) &&
+          k.match(/[a-z]/i)
+        );
+
+      // Remove stopwords using keyword-extractor's stopword list (but as a Set for speed)
+      const STOPWORDS = new Set(extractor.default.getStopwords("english"));
+      phrases = phrases.filter(
+        k => !STOPWORDS.has(k) && !COMMON_WORDS.has(k)
+      );
+
+      // Prepare a frequency map to rank by importance in the text (like simplified TextRank/TF)
+      const counts = {};
+      for (let phrase of phrases) {
+        if (phrase.length < 3) continue;
+        counts[phrase] = (counts[phrase] || 0) + 1;
       }
-      keywords = Object.entries(freq)
+      // Prefer multi-word phrases but mix in top relevant single words if needed
+      let sorted = Object.entries(counts)
         .sort((a, b) => b[1] - a[1])
-        .map(([k]) => k)
-        .slice(0, count);
-      // If nothing extracted, fallback
-      if (keywords.length === 0 && text.length > 0) throw new Error("No keywords found");
+        .map(([p, n]) => p);
+
+      // Shuffle in some top 2-3 word phrases (TF-IDF like approach)
+      let multiword = sorted.filter(p => p.split(" ").length > 1);
+      let singleword = sorted.filter(p => p.split(" ").length === 1);
+
+      keyphrases = [
+        ...multiword.slice(0, Math.ceil(count/2)),
+        ...singleword.slice(0, count)
+      ].filter((v, idx, arr) => arr.indexOf(v) === idx)
+       .slice(0, count);
+
+      // If nothing found, fallback
+      if (keyphrases.length === 0 && text.length > 0) throw new Error("No keyphrases found");
     } catch (e) {
-      // Fallback: frequency-based on simple words
-      const words = text
+      // Fallback: frequency-based on non-trivial words only (after filtering stopwords/common)
+      let words = text
         .toLowerCase()
-        .replace(/[^\w\s]/g, "")
+        .replace(/[^a-z0-9\s]/g, "")
         .split(/\s+/)
-        .filter(w => w.length > 4); // ignore very short words
+        .filter(w =>
+          w.length > 3 &&
+          !["this","that","will","with","from","which","have","been","very","upon"].includes(w) &&
+          !COMMON_WORDS.has(w)
+        );
+      const extractor = await import("keyword-extractor");
+      const STOPWORDS = new Set(extractor.default.getStopwords("english"));
       const freq = {};
       words.forEach(w => {
-        freq[w] = (freq[w] || 0) + 1;
+        if (!STOPWORDS.has(w) && !COMMON_WORDS.has(w)) {
+          freq[w] = (freq[w] || 0) + 1;
+        }
       });
-      keywords = Object.entries(freq)
+      keyphrases = Object.entries(freq)
         .sort((a, b) => b[1] - a[1])
         .map(([k]) => k)
         .slice(0, count);
     }
-    return keywords;
+    return keyphrases;
   }
 
   // Extract text from a PDF file using pdfjs-dist and locally bundled worker
