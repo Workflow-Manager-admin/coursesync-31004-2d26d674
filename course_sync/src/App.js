@@ -542,7 +542,7 @@ function App() {
             </div>
           </section>
           {/* EXTRACTED KEYWORDS/TOPICS */}
-          {isExtracted && extractedKeywords.length > 0 && (
+          {isExtracted && extractedKeywords.length > 0 && !Array.isArray(editedKeywords) && (
             <section className="cs-keywords-section">
               <h3 className="cs-section-subtitle">
                 {inputMode === "file"
@@ -552,20 +552,32 @@ function App() {
               <KeywordEditor
                 initialKeywords={extractedKeywords}
                 onConfirm={setEditedKeywords}
-                confirmed={!!editedKeywords}
+                confirmed={false}
               />
             </section>
           )}
 
           {/* TABS SECTION */}
           {isExtracted && Array.isArray(editedKeywords) && editedKeywords.length > 0 && (
-            <section className="cs-tabs-section">
-              <Tabs
-                extractedKeywords={editedKeywords}
-                onSaveFavorite={handleSaveFavorite}
-                favorites={favorites}
-              />
-            </section>
+            <>
+              <section className="cs-keywords-section">
+                <h3 className="cs-section-subtitle">
+                  Finalized Topics/Keywords
+                </h3>
+                <KeywordEditor
+                  initialKeywords={editedKeywords}
+                  onConfirm={() => {}}
+                  confirmed={true}
+                />
+              </section>
+              <section className="cs-tabs-section">
+                <Tabs
+                  extractedKeywords={editedKeywords}
+                  onSaveFavorite={handleSaveFavorite}
+                  favorites={favorites}
+                />
+              </section>
+            </>
           )}
 
           {!isExtracted && (
