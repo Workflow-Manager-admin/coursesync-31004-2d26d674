@@ -125,8 +125,8 @@ function App() {
               Dashboard
               {favorites.length > 0 && (
                 <span style={{
-                  background: "#FFD166",
-                  color: "#2D6A4F",
+                  background: "#D6C7A1", // cta-green
+                  color: "#4B2E25",      // header-bg
                   fontWeight: 700,
                   fontSize: "0.91em",
                   borderRadius: "56px",
