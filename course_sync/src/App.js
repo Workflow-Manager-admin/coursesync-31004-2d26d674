@@ -8,12 +8,12 @@ import {
 import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
 
 // Keyword extraction and file parsing imports for dual input
+// DOCX and keyword extractor only
 import mammoth from "mammoth";
 import keyword_extractor from "keyword-extractor";
 
-// PDF.js (v5+) uses a fake worker (in main thread) if no workerSrc is provided.
-// Do NOT set GlobalWorkerOptions.workerSrc or import/include pdf.worker.min.js.
-
+// PDF uploads will be rejected with an explicit user-facing message.
+// No PDF.js client extraction or imports.
 // PUBLIC_INTERFACE
 /**
  * Main container for CourseSync app.
