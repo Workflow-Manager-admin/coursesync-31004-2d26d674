@@ -103,14 +103,52 @@ function App() {
             <span className="cs-logo-text">CourseSync</span>
           </div>
           <div className="cs-nav-links">
-            <a href="#" className="cs-nav-link active">Home</a>
-            <a href="#" className="cs-nav-link">Dashboard</a>
-            <a href="#" className="cs-nav-link">About</a>
+            <a
+              href="#"
+              className={navClass("Home")}
+              onClick={e => {
+                e.preventDefault();
+                setShowDashboard(false);
+              }}
+            >
+              Home
+            </a>
+            <a
+              href="#"
+              className={navClass("Dashboard")}
+              onClick={e => {
+                e.preventDefault();
+                setShowDashboard(true);
+              }}
+              aria-label="Show favorites dashboard"
+            >
+              Dashboard
+              {favorites.length > 0 && (
+                <span style={{
+                  background: "#FFD166",
+                  color: "#2D6A4F",
+                  fontWeight: 700,
+                  fontSize: "0.91em",
+                  borderRadius: "56px",
+                  padding: "2px 9px",
+                  marginLeft: 6
+                }}>{favorites.length}</span>
+              )}
+            </a>
+            <a href="#" className="cs-nav-link">
+              About
+            </a>
           </div>
         </div>
       </nav>
+      {/* Dashboard modal overlay */}
+      {showDashboard && (
+        <Dashboard
+          onClose={() => setShowDashboard(false)}
+        />
+      )}
       {/* MAIN CONTENT CONTAINER */}
-      <main className="cs-main">
+      <main className="cs-main" role="main">
         <div className="container cs-main-container">
           {/* UPLOAD SECTION */}
           <section className="cs-upload-section">
@@ -153,13 +191,14 @@ function App() {
           {/* TABS SECTION */}
           {isExtracted && (
             <section className="cs-tabs-section">
-              <Tabs extractedKeywords={extractedKeywords} />
+              <Tabs
+                extractedKeywords={extractedKeywords}
+                onSaveFavorite={handleSaveFavorite}
+                favorites={favorites}
+              />
             </section>
           )}
 
-          {/* Dashboard and Favorites Placeholder */}
-          {/* Future enhancement: A dashboard/favorites UI section to display saved items could be added here. */}
-          
           {!isExtracted && (
             <section className="cs-welcome-prompt">
               <div className="cs-brand-hero">
