@@ -10,16 +10,25 @@ import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
 // PUBLIC_INTERFACE
 /**
  * Main container for CourseSync app.
- * Handles syllabus upload, simulates AI keyword/topic extraction, and renders extracted data attractively.
+ * Lets user upload a syllabus file or enter a domain,
+ * triggers recommendations from either.
  */
 function App() {
   // File input ref
   const fileInputRef = useRef();
 
-  // State management for file and extraction
+  // UI state: input method mode
+  const [inputMode, setInputMode] = useState("file"); // "file" or "domain"
+  // For uploaded file
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState("");
   const [extracting, setExtracting] = useState(false);
+  // For domain manual input
+  const [manualDomain, setManualDomain] = useState("");
+  const [domainInput, setDomainInput] = useState("");
+  const [domainLoading, setDomainLoading] = useState(false);
+
+  // Canonical topics/keywords source
   const [extractedKeywords, setExtractedKeywords] = useState([]);
   const [isExtracted, setIsExtracted] = useState(false);
 
@@ -61,18 +70,31 @@ function App() {
     return "cs-nav-link";
   }
 
+  // Mutually exclusive input method handlers
+  function handleInputModeChange(mode) {
+    setInputMode(mode);
+    setFileName("");
+    setSelectedFile(null);
+    setExtractedKeywords([]);
+    setIsExtracted(false);
+    setManualDomain("");
+    setDomainInput("");
+    setExtracting(false);
+    setDomainLoading(false);
+  }
 
-  // PUBLIC_INTERFACE
+  // When uploading a file
   function handleFileSelect(event) {
     const file = event.target.files[0];
     if (!file) return;
     setSelectedFile(file);
     setFileName(file.name);
+    setExtractedKeywords([]);
     setExtracting(true);
     setIsExtracted(false);
     // Simulate async extraction (e.g., backend call)
     setTimeout(() => {
-      // Mock extracted topics/keywords (can randomize for realism)
+      // Mock extracted topics/keywords
       const mockKeywords = [
         "Distributed Systems",
         "Software Engineering",
@@ -92,6 +114,51 @@ function App() {
   function showFileDialog() {
     fileInputRef.current.click();
   }
+  
+  // When user submits domain instead of uploading a file
+  function handleDomainSubmit(e) {
+    e.preventDefault();
+    const trimmed = domainInput.trim();
+    if (trimmed.length < 2) return;
+    setExtractedKeywords([]);
+    setIsExtracted(false);
+    setDomainLoading(true);
+    setManualDomain(trimmed);
+    // Simulate AI keyword extraction: just use the domain as the single topic (for demo)
+    setTimeout(() => {
+      // For real case, extract subtopics from backend; here use domain and simple expansions
+      const generatedKeywords = [trimmed];
+      // Optionally, add some pre-fixed/related expansions for certain known domains
+      if (/computer|cs|ai|data/i.test(trimmed)) {
+        generatedKeywords.push(
+          "Artificial Intelligence",
+          "Software Engineering",
+          "Data Science",
+          "Machine Learning"
+        );
+      } else if (/business|mgmt|finance|account/i.test(trimmed)) {
+        generatedKeywords.push(
+          "Management",
+          "Finance",
+          "Entrepreneurship",
+          "Marketing"
+        );
+      } else if (/biology|life/i.test(trimmed)) {
+        generatedKeywords.push(
+          "Genetics",
+          "Biochemistry",
+          "Biotech",
+          "Ecology"
+        );
+      }
+      setExtractedKeywords(generatedKeywords);
+      setDomainLoading(false);
+      setIsExtracted(true);
+    }, 900);
+  }
+
+  // Clean up input fields when toggling modes
+  // (Already done via handleInputModeChange.)
 
   return (
     <div className="app cs-theme">
@@ -150,36 +217,114 @@ function App() {
       {/* MAIN CONTENT CONTAINER */}
       <main className="cs-main" role="main">
         <div className="container cs-main-container">
-          {/* UPLOAD SECTION */}
+          {/* Choice: File upload or Domain input */}
           <section className="cs-upload-section">
-            <h2 className="cs-section-title">Upload your Syllabus</h2>
-            <div className="cs-upload-box">
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                ref={fileInputRef}
-                style={{display: "none"}}
-                onChange={handleFileSelect}
-              />
-              <button className="btn cs-btn-accent" onClick={showFileDialog}>
-                {fileName ? "Change File" : "Select File"}
+            <h2 className="cs-section-title">Get Personalized Recommendations</h2>
+            <div style={{display: "flex", gap: "14px", marginBottom: 14}}>
+              <button
+                type="button"
+                className={`btn cs-btn-accent${inputMode === "file" ? " active" : ""}`}
+                aria-pressed={inputMode === "file"}
+                style={{
+                  background: inputMode === "file" ? "#4B2E25" : "",
+                  color: inputMode === "file" ? "#FFD9BF" : ""
+                }}
+                onClick={() => handleInputModeChange("file")}
+              >
+                Upload Syllabus
               </button>
-              <span className="cs-upload-filename">
-                {fileName}
-              </span>
-              {extracting && <span className="cs-extracting-msg">Analyzing document with AI...</span>}
+              <button
+                type="button"
+                className={`btn cs-btn-accent${inputMode === "domain" ? " active" : ""}`}
+                aria-pressed={inputMode === "domain"}
+                style={{
+                  background: inputMode === "domain" ? "#4B2E25" : "",
+                  color: inputMode === "domain" ? "#FFD9BF" : ""
+                }}
+                onClick={() => handleInputModeChange("domain")}
+              >
+                Enter Domain
+              </button>
             </div>
+            {/* Depending on the input method: */}
+            {inputMode === "file" ? (
+              <div className="cs-upload-box">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  ref={fileInputRef}
+                  style={{display: "none"}}
+                  onChange={handleFileSelect}
+                />
+                <button className="btn cs-btn-accent" onClick={showFileDialog}>
+                  {fileName ? "Change File" : "Select File"}
+                </button>
+                <span className="cs-upload-filename">
+                  {fileName}
+                </span>
+                {extracting && <span className="cs-extracting-msg">Analyzing document with AI...</span>}
+              </div>
+            ) : (
+              <form
+                onSubmit={handleDomainSubmit}
+                style={{ display: "flex", alignItems: "center", gap: "17px", width: "100%", marginBottom: 2 }}
+              >
+                <input
+                  type="text"
+                  value={domainInput}
+                  onChange={e => setDomainInput(e.target.value)}
+                  placeholder="Type a domain (e.g. Computer Science, Business...)"
+                  style={{
+                    fontSize: "1.04em",
+                    padding: "9px 16px",
+                    borderRadius: "7px",
+                    border: "1.4px solid #D8BFAA",
+                    minWidth: 0,
+                    width: "300px",
+                    flex: 1
+                  }}
+                  disabled={domainLoading}
+                  aria-label="Type a domain for recommendations"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="btn cs-btn-accent"
+                  style={{ minWidth: 99 }}
+                  disabled={domainLoading || !domainInput.trim()}
+                >
+                  {domainLoading ? "Analyzing..." : "Recommend"}
+                </button>
+              </form>
+            )}
             <div className="cs-helper-text">
-              Supports PDF, DOC, DOCX.<br />
-              <b>
-                Don&apos;t have a syllabus? Try a demo to preview features!
-              </b>
+              {inputMode === "file" ? (
+                <>
+                  Supports PDF, DOC, DOCX.<br />
+                  <b>
+                    Don&apos;t have a syllabus? Try entering your domain below!
+                  </b>
+                </>
+              ) : (
+                <>
+                  <span>
+                    Type your field of study, e.g. &quot;Computer Science&quot;, &quot;Business Management&quot;, &quot;Biology&quot;, etc.<br />
+                    <b>
+                      Want more accurate results? Try uploading a syllabus!
+                    </b>
+                  </span>
+                </>
+              )}
             </div>
           </section>
           {/* EXTRACTED KEYWORDS/TOPICS */}
-          {isExtracted && (
+          {isExtracted && extractedKeywords.length > 0 && (
             <section className="cs-keywords-section">
-              <h3 className="cs-section-subtitle">Extracted Topics &amp; Keywords</h3>
+              <h3 className="cs-section-subtitle">{
+                inputMode === "file"
+                  ? "Extracted Topics & Keywords"
+                  : "Domain Topics"
+              }</h3>
               <div className="cs-keywords-list">
                 {extractedKeywords.map((key, idx) => (
                   <span className="cs-keyword" key={idx}>{key}</span>
@@ -189,7 +334,7 @@ function App() {
           )}
 
           {/* TABS SECTION */}
-          {isExtracted && (
+          {isExtracted && extractedKeywords.length > 0 && (
             <section className="cs-tabs-section">
               <Tabs
                 extractedKeywords={extractedKeywords}
@@ -204,8 +349,8 @@ function App() {
               <div className="cs-brand-hero">
                 <h1 className="cs-app-title">Empower Your Degree Journey</h1>
                 <div className="cs-app-desc">
-                  Upload your university syllabus to discover tailored internships,
-                  online certifications, and project ideas that match your coursework.
+                  Upload your syllabus <b>or</b> enter a domain to discover tailored
+                  internships, certifications, and project ideas matched to your learning!
                 </div>
               </div>
             </section>
