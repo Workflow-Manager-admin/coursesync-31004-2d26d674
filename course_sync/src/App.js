@@ -5,6 +5,7 @@ import {
   fetchCertifications,
   fetchProjectIdeas
 } from "./utils/recommendations";
+import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
 
 // PUBLIC_INTERFACE
 /**
