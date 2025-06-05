@@ -221,28 +221,28 @@ function App() {
  * Uses async fetchers to retrieve each tab's recommendations based on topics.
  * @param {Object} props
  * @param {string[]} props.extractedKeywords
+ * @param {function} [props.onSaveFavorite]   Called with (item, type)
+ * @param {Array} [props.favorites]
  */
-function Tabs({ extractedKeywords = [] }) {
+function Tabs({ extractedKeywords = [], onSaveFavorite, favorites }) {
   const tabList = ["Internships", "Certifications", "Project Ideas"];
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [recs, setRecs] = useState([]);
   const [err, setErr] = useState(null);
 
-  // Fetch the relevant recommendations when tab or keywords change
+  // Fetch recommendations
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setErr(null);
 
-    // Decide which fetch function
     let fetchFn =
       activeIdx === 0
         ? fetchInternships
         : activeIdx === 1
         ? fetchCertifications
         : fetchProjectIdeas;
-
     fetchFn(extractedKeywords)
       .then(datas => {
         if (!cancelled) setRecs(datas);
@@ -258,6 +258,19 @@ function Tabs({ extractedKeywords = [] }) {
       cancelled = true;
     };
   }, [activeIdx, extractedKeywords]);
+
+  // Utility to know if item favorited
+  function isFavorited(item) {
+    if (!favorites) return false;
+    return favorites.some(
+      f => f.title === item.title && f.summary === item.summary && f.meta === item.meta
+    );
+  }
+
+  // Prefer a label consistent with current tab
+  function favType() {
+    return tabList[activeIdx].replace(/\s/g, "");
+  }
 
   return (
     <div>
@@ -299,6 +312,34 @@ function Tabs({ extractedKeywords = [] }) {
               <div className="rec-summary">{rec.summary}</div>
               <div className="rec-meta">{rec.meta}</div>
               <div className="rec-action">{rec.action}</div>
+              {onSaveFavorite && (
+                isFavorited(rec) ? (
+                  <span style={{
+                    background: "#FFD166",
+                    color: "#aaa",
+                    fontWeight: 700,
+                    borderRadius: 5,
+                    marginTop: 7,
+                    fontSize: "0.97em",
+                    padding: "3.5px 11px",
+                    alignSelf: "flex-start"
+                  }}>Saved</span>
+                ) : (
+                  <button
+                    className="btn cs-btn-accent"
+                    style={{
+                      marginTop: 8,
+                      padding: "7px 17px",
+                      alignSelf: "flex-start",
+                      fontSize: "0.98em"
+                    }}
+                    onClick={() => onSaveFavorite(rec, favType())}
+                    aria-label="Add to favorites"
+                  >
+                    Save
+                  </button>
+                )
+              )}
             </div>
           ))
         )}
