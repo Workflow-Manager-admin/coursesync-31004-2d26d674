@@ -125,16 +125,26 @@ function App() {
     return keywords;
   }
 
-  // Extract text from a PDF file using pdfjs-dist
+  // Extract text from a PDF file using pdfjs-dist and locally bundled worker
   async function extractTextFromPDF(file) {
     try {
-      // Dynamically import PDF.js for reduced bundle size
+      /*
+       * Use standard synchronous import so worker is bundled.
+       * pdfjs-dist is installed, so we import the local minified worker and assign it to GlobalWorkerOptions.workerSrc.
+       */
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
-
-      // Ensure workerSrc is set or error will occur
-      // Set workerSrc to match the installed pdfjs-dist version (5.3.31)
+      // The following import syntax with .default ensures compatibility with CommonJS/ESM interop
+      let pdfjsWorker;
+      try {
+        // Try ESM import
+        pdfjsWorker = (await import("pdfjs-dist/build/pdf.worker.min.js")).default;
+      } catch (err) {
+        // Fallback to require (should only happen in CommonJS contexts, but left as secondary fallback)
+        pdfjsWorker = require("pdfjs-dist/build/pdf.worker.min.js");
+      }
+      // Assign locally bundled worker script so that we do not rely on CDN or dynamic import
       if (pdfjsLib.GlobalWorkerOptions) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.js';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
       }
 
       const arrayBuffer = await file.arrayBuffer();
