@@ -170,22 +170,21 @@ function App() {
     const fname = file.name || "";
     const ext = fname.toLowerCase().slice(fname.lastIndexOf("."));
     if (!validExts.includes(ext)) {
-      setFileError("Supported: PDF, DOC, DOCX only.");
+      setFileError("Supported: DOC, DOCX only. (PDF upload is currently not supported.)");
       return;
     }
     setUploadedFileName(fname);
-    setFileExtracting(true);
-    // Parse accordingly
+
+    // Handle PDF uploads: show error or alert and exit gracefully
     if (ext === ".pdf") {
-      extractPdfText(file)
-        .then((text) => {
-          handleExtractedText(text);
-        })
-        .catch((err) => {
-          setFileError("Failed to extract PDF: " + (err?.message || "Unknown error"));
-        })
-        .finally(() => setFileExtracting(false));
-    } else if (ext === ".docx") {
+      setFileError("PDF upload/extraction is not supported in this environment. Please upload a DOCX or DOC file instead.");
+      setFileExtracting(false);
+      return;
+    }
+
+    setFileExtracting(true);
+
+    if (ext === ".docx") {
       extractDocxText(file)
         .then((text) => {
           handleExtractedText(text);
@@ -235,22 +234,6 @@ function App() {
     }
     setExtractedKeywords(extracted);
     setIsExtracted(true);
-  }
-
-  // PDF Extraction helper
-  async function extractPdfText(file) {
-    // Returns a Promise<string> containing the concatenated PDF text
-    const arrBuf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrBuf }).promise;
-    let fullText = "";
-    for (let pg = 1; pg <= pdf.numPages; ++pg) {
-      const page = await pdf.getPage(pg);
-      const txtContent = await page.getTextContent();
-      fullText += txtContent.items
-        .map((item) => ("str" in item ? item.str : ""))
-        .join(" ") + " ";
-    }
-    return fullText;
   }
 
   // DOCX Extraction helper
@@ -475,7 +458,10 @@ function App() {
                     )}
                   </div>
                   <div className="cs-helper-text">
-                    Supported: PDF, DOC, DOCX syllabus files. Text is extracted locally for privacy.
+                    Supported: DOC, DOCX syllabus files.<br/>
+                    <span style={{ color: "#B02E25", fontWeight: 600 }}>
+                      PDF uploads are not supported in this environment.
+                    </span>
                   </div>
                   {fileError && (
                     <div style={{ color: "#B02E25", marginTop: 8, fontWeight: 600 }}>
