@@ -12,36 +12,48 @@
  */
 export async function fetchInternships(topics = []) {
   // Mock: Simulate filtering based on topics
+  // Add official platform URLs as reference for each rec.
+  const internshalaUrl = "https://internshala.com/internships";
+  const linkedinUrl = "https://www.linkedin.com/jobs/internships";
+  const remotiveUrl = "https://remotive.com/remote-jobs/search?category=software-dev";
+  const adzunaUrl = "https://www.adzuna.com/search?q=intern";
+  const joobleUrl = "https://jooble.org/jobs-internship";
+  const angellistUrl = "https://wellfound.com/jobs";
   const exemplar = [
     {
       title: "Backend Intern — FinTech Co.",
       summary: "Develop microservices in Node.js for payment systems.",
       meta: "Remote | 2 months | Paid",
       action: "Apply on Internshala",
+      resourceLink: internshalaUrl
     },
     {
       title: "AI Research Intern — NLP Lab",
       summary: "Help train large language models for text summarization.",
       meta: "Onsite | 3 months | Stipend",
-      action: "View details",
+      action: "See on Remotive",
+      resourceLink: remotiveUrl
     },
     {
       title: "Software Engineering Intern — HealthTech",
       summary: "Build end-to-end cloud solutions for hospitals.",
       meta: "Hybrid | 6 months",
       action: "Apply via LinkedIn",
+      resourceLink: linkedinUrl
     },
     {
       title: "Cybersecurity Analyst — SecureIT",
       summary: "Assess and mitigate security risks for web apps.",
       meta: "Remote | 3 months",
-      action: "Apply now",
+      action: "Find on Jooble",
+      resourceLink: joobleUrl
     },
     {
       title: "Database Intern — EduData Inc.",
       summary: "Help design distributed, scalable student record systems.",
       meta: "Onsite | 4 months",
-      action: "View details",
+      action: "Browse on AngelList",
+      resourceLink: angellistUrl
     }
   ];
   await new Promise(r => setTimeout(r, 650)); // simulate network latency
