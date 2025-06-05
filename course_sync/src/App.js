@@ -130,6 +130,14 @@ function App() {
     try {
       // Dynamically import PDF.js for reduced bundle size
       const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
+
+      // Ensure workerSrc is set or error will occur
+      // If you want to check for a local worker file, you can do it here,
+      // but in modern create-react-app setups, it's easiest to use a CDN.
+      if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+      }
+
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       let text = '';
