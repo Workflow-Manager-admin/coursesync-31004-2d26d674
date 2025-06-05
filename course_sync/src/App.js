@@ -526,13 +526,13 @@ function App() {
                 <>
                   Supports PDF, DOC, DOCX.<br />
                   <b>
-                    Don&apos;t have a syllabus? Try entering your domain below!
+                    Don't have a syllabus? Try entering your domain below!
                   </b>
                 </>
               ) : (
                 <>
                   <span>
-                    Type your field of study, e.g. &quot;Computer Science&quot;, &quot;Business Management&quot;, &quot;Biology&quot;, etc.<br />
+                    Type your field of study, e.g. "Computer Science", "Business Management", "Biology", etc.<br />
                     <b>
                       Want more accurate results? Try uploading a syllabus!
                     </b>
@@ -544,24 +544,24 @@ function App() {
           {/* EXTRACTED KEYWORDS/TOPICS */}
           {isExtracted && extractedKeywords.length > 0 && (
             <section className="cs-keywords-section">
-              <h3 className="cs-section-subtitle">{
-                inputMode === "file"
-                  ? "Extracted Topics & Keywords"
-                  : "Domain Topics"
-              }</h3>
-              <div className="cs-keywords-list">
-                {extractedKeywords.map((key, idx) => (
-                  <span className="cs-keyword" key={idx}>{key}</span>
-                ))}
-              </div>
+              <h3 className="cs-section-subtitle">
+                {inputMode === "file"
+                  ? "Review & Edit Extracted Topics/Keywords"
+                  : "Review & Edit Topics"}
+              </h3>
+              <KeywordEditor
+                initialKeywords={extractedKeywords}
+                onConfirm={setEditedKeywords}
+                confirmed={!!editedKeywords}
+              />
             </section>
           )}
 
           {/* TABS SECTION */}
-          {isExtracted && extractedKeywords.length > 0 && (
+          {isExtracted && Array.isArray(editedKeywords) && editedKeywords.length > 0 && (
             <section className="cs-tabs-section">
               <Tabs
-                extractedKeywords={extractedKeywords}
+                extractedKeywords={editedKeywords}
                 onSaveFavorite={handleSaveFavorite}
                 favorites={favorites}
               />
