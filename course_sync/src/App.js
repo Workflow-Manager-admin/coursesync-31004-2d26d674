@@ -6,6 +6,8 @@ import {
   fetchProjectIdeas,
 } from "./utils/recommendations";
 import Dashboard, { loadFavorites, saveFavorites } from "./Dashboard";
+import About from "./About";
+import { Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
 
 // Keyword extraction and file parsing imports for dual input
 // DOCX and keyword extractor only
